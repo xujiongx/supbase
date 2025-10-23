@@ -2,11 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
-import type { Session } from "@supabase/supabase-js";
-
+import { getSupabase } from "@/lib/supabaseClient";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { useSupabaseSession } from "@/lib/useSupabaseSession";
 import TimeFilter, { TimeFilterValue } from "@/components/TimeFilter";
 
 interface Todo {
@@ -18,7 +17,7 @@ interface Todo {
 
 export default function TodosPage() {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null>(null);
+  const { session, isSupabaseConfigured } = useSupabaseSession();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -27,34 +26,16 @@ export default function TodosPage() {
     text: string;
   } | null>(null);
   const [deletingTodo, setDeletingTodo] = useState<Todo | null>(null);
-  const [timeFilter, setTimeFilter] = useState<TimeFilterValue>({ type: "today" });
-
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      const t0 = setTimeout(() => setLoading(false), 0);
-      return () => clearTimeout(t0);
-    }
-    const client = getSupabase()!;
-    const t = setTimeout(() => {
-      client.auth.getSession().then(({ data }) => {
-        setSession(data.session ?? null);
-      });
-    }, 0);
-    const { data: sub } = client.auth.onAuthStateChange((_event, s) => {
-      setSession(s ?? null);
-      window.dispatchEvent(new CustomEvent("todos:refresh"));
-    });
-    return () => {
-      clearTimeout(t);
-      sub.subscription?.unsubscribe();
-    };
-  }, []);
+  const [timeFilter, setTimeFilter] = useState<TimeFilterValue>({
+    type: "today",
+  });
 
   const fetchTodos = async () => {
     if (!isSupabaseConfigured || !session) {
       setLoading(false);
       return;
     }
+    setLoading(true);
 
     let q = getSupabase()!
       .from("todos")
@@ -88,8 +69,11 @@ export default function TodosPage() {
   };
 
   useEffect(() => {
-    const ready = timeFilter.type === "all" || (!!timeFilter.start && !!timeFilter.end);
-    const t = setTimeout(() => { if (ready) fetchTodos(); }, 200);
+    const ready =
+      timeFilter.type === "all" || (!!timeFilter.start && !!timeFilter.end);
+    const t = setTimeout(() => {
+      if (ready) fetchTodos();
+    }, 200);
     const onRefresh = () => fetchTodos();
     window.addEventListener("todos:refresh", onRefresh);
     return () => {
