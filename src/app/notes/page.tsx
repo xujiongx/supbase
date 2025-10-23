@@ -9,6 +9,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import TimeFilter, { TimeFilterValue } from "@/components/TimeFilter";
 
 interface Note {
   id: number;
@@ -23,6 +24,7 @@ export default function NotesPage() {
   const [content, setContent] = useState("");
   const [banner, setBanner] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const router = useRouter();
+  const [timeFilter, setTimeFilter] = useState<TimeFilterValue>({ type: "today" });
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -37,7 +39,7 @@ export default function NotesPage() {
     }, 0);
     const { data: sub } = client.auth.onAuthStateChange((_event, s) => {
       setSession(s ?? null);
-      window.dispatchEvent(new CustomEvent("notes:refresh"));
+      // 移除 notes:refresh 派发，避免与依赖副作用重复触发
     });
     return () => {
       clearTimeout(t);
@@ -50,25 +52,34 @@ export default function NotesPage() {
       setLoading(false);
       return;
     }
-    const { data, error } = await getSupabase()!
+    let q = getSupabase()!
       .from("daily_notes")
       .select("id, content, created_at")
-      .eq("user_id", session.user.id)
-      .order("created_at", { ascending: false });
+      .eq("user_id", session.user.id);
+    // 时间范围筛选（YYYY-MM-DD）
+    if (timeFilter.type !== "all") {
+      const startStr = timeFilter.start;
+      const endStr = timeFilter.end;
+      if (startStr) q = q.gte("created_at", `${startStr} 00:00:00`);
+      if (endStr) q = q.lte("created_at", `${endStr} 23:59:59`);
+    }
+    q = q.order("created_at", { ascending: false });
+    const { data, error } = await q;
     if (error) setBanner({ type: "error", text: error.message });
     else setNotes(data || []);
     setLoading(false);
   };
 
   useEffect(() => {
-    const t = setTimeout(() => fetchNotes(), 0);
+    const ready = timeFilter.type === "all" || (!!timeFilter.start && !!timeFilter.end);
+    const t = setTimeout(() => { if (ready) fetchNotes(); }, 200);
     const onRefresh = () => fetchNotes();
     window.addEventListener("notes:refresh", onRefresh);
     return () => {
       clearTimeout(t);
       window.removeEventListener("notes:refresh", onRefresh);
     };
-  }, [session]);
+  }, [session, timeFilter]);
 
   const addNote = async () => {
     const trimmed = content.trim();
@@ -136,6 +147,9 @@ export default function NotesPage() {
           ) : (
             <>
               {banner && (<div className="card px-3 py-2 text-sm">{banner.text}</div>)}
+
+              {/* 时间筛选组件 */}
+              <TimeFilter value={timeFilter} onChange={setTimeFilter} />
 
               {/* 编辑与预览 */}
               <div className="card p-3 space-y-3">
@@ -212,5 +226,5 @@ export default function NotesPage() {
         </main>
       </Tooltip.Provider>
     </div>
-);
+  );
 }

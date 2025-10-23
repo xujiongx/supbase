@@ -7,6 +7,7 @@ import type { Session } from "@supabase/supabase-js";
 
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import TimeFilter, { TimeFilterValue } from "@/components/TimeFilter";
 
 interface Todo {
   id: number;
@@ -21,8 +22,12 @@ export default function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
-  const [banner, setBanner] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [banner, setBanner] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [deletingTodo, setDeletingTodo] = useState<Todo | null>(null);
+  const [timeFilter, setTimeFilter] = useState<TimeFilterValue>({ type: "today" });
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -50,11 +55,30 @@ export default function TodosPage() {
       setLoading(false);
       return;
     }
-    const { data, error } = await getSupabase()!
+
+    let q = getSupabase()!
       .from("todos")
       .select("id, title, is_complete, created_at")
-      .eq("user_id", session.user.id)
-      .order("created_at", { ascending: false });
+      .eq("user_id", session.user.id);
+
+    // 统一消费组件提供的 start/end（YYYY-MM-DD），仅当 type!==all 时应用时间条件
+    const startStr = timeFilter.start?.trim();
+    const endStr = timeFilter.end?.trim();
+
+    if (timeFilter.type !== "all") {
+      if (startStr) {
+        const s = new Date(startStr);
+        s.setHours(0, 0, 0, 0);
+        q = q.gte("created_at", s.toISOString());
+      }
+      if (endStr) {
+        const e = new Date(endStr);
+        e.setHours(23, 59, 59, 999);
+        q = q.lte("created_at", e.toISOString());
+      }
+    }
+
+    const { data, error } = await q.order("created_at", { ascending: false });
     if (error) {
       setBanner({ type: "error", text: error.message });
     } else {
@@ -64,22 +88,24 @@ export default function TodosPage() {
   };
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      fetchTodos();
-    }, 0);
+    const ready = timeFilter.type === "all" || (!!timeFilter.start && !!timeFilter.end);
+    const t = setTimeout(() => { if (ready) fetchTodos(); }, 200);
     const onRefresh = () => fetchTodos();
     window.addEventListener("todos:refresh", onRefresh);
     return () => {
       clearTimeout(t);
       window.removeEventListener("todos:refresh", onRefresh);
     };
-  }, [session]);
+  }, [session, timeFilter]);
 
   const handleAdd = async () => {
     const trimmed = title.trim();
     if (!trimmed) return;
     if (!isSupabaseConfigured) {
-      setBanner({ type: "error", text: "请先在 .env.local 填写 Supabase URL 和 anon key" });
+      setBanner({
+        type: "error",
+        text: "请先在 .env.local 填写 Supabase URL 和 anon key",
+      });
       return;
     }
     if (!session) {
@@ -99,7 +125,10 @@ export default function TodosPage() {
 
   const toggleComplete = async (todo: Todo) => {
     if (!isSupabaseConfigured) {
-      setBanner({ type: "error", text: "请先在 .env.local 填写 Supabase URL 和 anon key" });
+      setBanner({
+        type: "error",
+        text: "请先在 .env.local 填写 Supabase URL 和 anon key",
+      });
       return;
     }
     if (!session?.user?.id) {
@@ -117,7 +146,10 @@ export default function TodosPage() {
 
   const removeTodo = async (id: number) => {
     if (!isSupabaseConfigured) {
-      setBanner({ type: "error", text: "请先在 .env.local 填写 Supabase URL 和 anon key" });
+      setBanner({
+        type: "error",
+        text: "请先在 .env.local 填写 Supabase URL 和 anon key",
+      });
       return;
     }
     if (!session?.user?.id) {
@@ -139,32 +171,46 @@ export default function TodosPage() {
         <main className="space-y-8">
           {/* 顶部标题与快捷入口 */}
           <section className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Todos</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+              Todos
+            </h1>
             <div className="flex flex-wrap gap-3">
-              <Link href="/" className="btn btn-outline">返回首页</Link>
+              <Link href="/" className="btn btn-outline">
+                返回首页
+              </Link>
             </div>
+            <TimeFilter value={timeFilter} onChange={setTimeFilter} />
           </section>
 
           {/* 状态说明或登录提示 */}
           {!isSupabaseConfigured ? (
             <div className="card p-4">
               <div className="text-sm opacity-70">
-                请在项目根目录创建 <span className="font-medium">.env.local</span> 并填入 <span className="font-medium">NEXT_PUBLIC_SUPABASE_URL</span> 与 <span className="font-medium">NEXT_PUBLIC_SUPABASE_ANON_KEY</span>，然后重启开发服务器。
+                请在项目根目录创建{" "}
+                <span className="font-medium">.env.local</span> 并填入{" "}
+                <span className="font-medium">NEXT_PUBLIC_SUPABASE_URL</span> 与{" "}
+                <span className="font-medium">
+                  NEXT_PUBLIC_SUPABASE_ANON_KEY
+                </span>
+                ，然后重启开发服务器。
               </div>
             </div>
           ) : !session ? (
             <div className="card p-4">
               <div className="text-sm opacity-70">
                 请先登录以查看你的待办。
-                <button onClick={() => router.push("/login")} className="ml-1 underline underline-offset-4">立即去登录</button>
+                <button
+                  onClick={() => router.push("/login")}
+                  className="ml-1 underline underline-offset-4"
+                >
+                  立即去登录
+                </button>
               </div>
             </div>
           ) : (
             <>
               {banner && (
-                <div className="card px-3 py-2 text-sm">
-                  {banner.text}
-                </div>
+                <div className="card px-3 py-2 text-sm">{banner.text}</div>
               )}
 
               {/* 添加待办 */}
@@ -173,16 +219,30 @@ export default function TodosPage() {
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleAdd();
+                    }}
                     placeholder="输入新的待办..."
                     className="input flex-1"
                     aria-label="输入新的待办"
                   />
                   <Tooltip.Root>
                     <Tooltip.Trigger asChild>
-                      <button onClick={handleAdd} disabled={!title.trim()} className="btn btn-primary">添加</button>
+                      <button
+                        onClick={handleAdd}
+                        disabled={!title.trim()}
+                        className="btn btn-primary"
+                      >
+                        添加
+                      </button>
                     </Tooltip.Trigger>
-                    <Tooltip.Content className="card px-2 py-1 text-xs" sideOffset={6}>按 Enter 快速添加<Tooltip.Arrow className="opacity-40" /></Tooltip.Content>
+                    <Tooltip.Content
+                      className="card px-2 py-1 text-xs"
+                      sideOffset={6}
+                    >
+                      按 Enter 快速添加
+                      <Tooltip.Arrow className="opacity-40" />
+                    </Tooltip.Content>
                   </Tooltip.Root>
                 </div>
               </div>
@@ -201,7 +261,10 @@ export default function TodosPage() {
               ) : (
                 <ul className="w-full space-y-2">
                   {todos.map((t) => (
-                    <li key={t.id} className="card flex items-center justify-between px-3 py-2">
+                    <li
+                      key={t.id}
+                      className="card flex items-center justify-between px-3 py-2"
+                    >
                       <div className="flex items-center gap-3">
                         <Tooltip.Root>
                           <Tooltip.Trigger asChild>
@@ -212,15 +275,38 @@ export default function TodosPage() {
                               onChange={() => toggleComplete(t)}
                             />
                           </Tooltip.Trigger>
-                          <Tooltip.Content className="card px-2 py-1 text-xs" sideOffset={6}>{t.is_complete ? "标记为未完成" : "标记为完成"}<Tooltip.Arrow className="opacity-40" /></Tooltip.Content>
+                          <Tooltip.Content
+                            className="card px-2 py-1 text-xs"
+                            sideOffset={6}
+                          >
+                            {t.is_complete ? "标记为未完成" : "标记为完成"}
+                            <Tooltip.Arrow className="opacity-40" />
+                          </Tooltip.Content>
                         </Tooltip.Root>
-                        <span className={t.is_complete ? "line-through opacity-60" : ""}>{t.title}</span>
+                        <span
+                          className={
+                            t.is_complete ? "line-through opacity-60" : ""
+                          }
+                        >
+                          {t.title}
+                        </span>
                       </div>
                       <Tooltip.Root>
                         <Tooltip.Trigger asChild>
-                          <button onClick={() => setDeletingTodo(t)} className="btn btn-danger text-sm">删除</button>
+                          <button
+                            onClick={() => setDeletingTodo(t)}
+                            className="btn btn-danger text-sm"
+                          >
+                            删除
+                          </button>
                         </Tooltip.Trigger>
-                        <Tooltip.Content className="card px-2 py-1 text-xs" sideOffset={6}>删除该待办<Tooltip.Arrow className="opacity-40" /></Tooltip.Content>
+                        <Tooltip.Content
+                          className="card px-2 py-1 text-xs"
+                          sideOffset={6}
+                        >
+                          删除该待办
+                          <Tooltip.Arrow className="opacity-40" />
+                        </Tooltip.Content>
                       </Tooltip.Root>
                     </li>
                   ))}
@@ -228,12 +314,21 @@ export default function TodosPage() {
               )}
 
               {/* 删除确认对话框 */}
-              <Dialog.Root open={!!deletingTodo} onOpenChange={(open) => { if (!open) setDeletingTodo(null); }}>
+              <Dialog.Root
+                open={!!deletingTodo}
+                onOpenChange={(open) => {
+                  if (!open) setDeletingTodo(null);
+                }}
+              >
                 <Dialog.Portal>
                   <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
                   <Dialog.Content className="card fixed left-1/2 top-1/2 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 p-4">
-                    <Dialog.Title className="text-lg font-medium">确认删除</Dialog.Title>
-                    <Dialog.Description className="mt-1 text-sm opacity-70">该操作不可撤销，是否删除「{deletingTodo?.title}」？</Dialog.Description>
+                    <Dialog.Title className="text-lg font-medium">
+                      确认删除
+                    </Dialog.Title>
+                    <Dialog.Description className="mt-1 text-sm opacity-70">
+                      该操作不可撤销，是否删除「{deletingTodo?.title}」？
+                    </Dialog.Description>
                     <div className="mt-4 flex justify-end gap-2">
                       <Dialog.Close asChild>
                         <button className="btn btn-outline">取消</button>
@@ -241,8 +336,12 @@ export default function TodosPage() {
                       <Dialog.Close asChild>
                         <button
                           className="btn btn-danger"
-                          onClick={() => deletingTodo && removeTodo(deletingTodo.id)}
-                        >删除</button>
+                          onClick={() =>
+                            deletingTodo && removeTodo(deletingTodo.id)
+                          }
+                        >
+                          删除
+                        </button>
                       </Dialog.Close>
                     </div>
                   </Dialog.Content>
