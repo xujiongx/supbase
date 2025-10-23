@@ -56,6 +56,12 @@ export default function Home() {
               >
                 进入我的 Todos
               </Link>
+              <Link
+                href="/notes"
+                className="rounded-md border px-4 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50"
+              >
+                查看每日笔记
+              </Link>
               <button
                 onClick={signOut}
                 disabled={signingOut}
@@ -82,6 +88,12 @@ export default function Home() {
                 className="rounded-md border px-4 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50"
               >
                 先看看 Todos
+              </Link>
+              <Link
+                href="/notes"
+                className="rounded-md border px-4 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50"
+              >
+                查看每日笔记
               </Link>
             </div>
             <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
