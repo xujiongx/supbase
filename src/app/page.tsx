@@ -1,64 +1,94 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import type { Session } from "@supabase/supabase-js";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 
 export default function Home() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    const client = getSupabase()!;
+    const t = setTimeout(() => {
+      client.auth.getSession().then(({ data }) => {
+        setSession(data.session ?? null);
+      });
+    }, 0);
+    const { data: sub } = client.auth.onAuthStateChange((_event, s) => {
+      setSession(s ?? null);
+    });
+    return () => {
+      clearTimeout(t);
+      sub.subscription?.unsubscribe();
+    };
+  }, []);
+
+  const signOut = async () => {
+    if (!isSupabaseConfigured) return;
+    setSigningOut(true);
+    try {
+      const client = getSupabase()!;
+      await client.auth.signOut();
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-center gap-6 py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <h1 className="text-3xl font-semibold text-black dark:text-zinc-50">欢迎使用 Todos 应用</h1>
+        {!isSupabaseConfigured ? (
+          <div className="text-zinc-600 dark:text-zinc-400">
+            请在项目根目录创建 .env.local 并填入 NEXT_PUBLIC_SUPABASE_URL 与 NEXT_PUBLIC_SUPABASE_ANON_KEY，然后重启开发服务器。
+          </div>
+        ) : session ? (
+          <div className="w-full max-w-lg rounded-lg border p-4">
+            <div className="mb-3 text-sm text-zinc-700 dark:text-zinc-300">
+              已登录：<span className="font-medium">{session.user.email || session.user.id}</span>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                href="/todos"
+                className="rounded-md bg-foreground px-4 py-2 text-background hover:bg-[#383838] dark:hover:bg-[#ccc]"
+              >
+                进入我的 Todos
+              </Link>
+              <button
+                onClick={signOut}
+                disabled={signingOut}
+                className="rounded-md border px-4 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] disabled:opacity-60"
+              >
+                退出登录
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full max-w-lg rounded-lg border p-6">
+            <p className="mb-4 text-zinc-600 dark:text-zinc-400">
+              登录后即可创建、勾选和删除你的待办事项。
+            </p>
+            <div className="flex gap-3">
+              <Link
+                href="/login"
+                className="rounded-md bg-foreground px-4 py-2 text-background hover:bg-[#383838] dark:hover:bg-[#ccc]"
+              >
+                去登录
+              </Link>
+              <Link
+                href="/todos"
+                className="rounded-md border px-4 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50"
+              >
+                先看看 Todos
+              </Link>
+            </div>
+            <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
+              提示：未登录时在 Todos 页面只能查看提示，登录后才会显示你的列表。
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );
