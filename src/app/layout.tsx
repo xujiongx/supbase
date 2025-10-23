@@ -28,8 +28,8 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}>
         <Tooltip.Provider delayDuration={200}>
           {/* 全局顶部导航（右上角登录/退出），页面主体使用 children */}
-          <header className="card fixed top-0 z-50 w-full bg-background">
-            <div className="mx-auto max-w-5xl px-4 py-3">
+          <header className="sticky top-0 z-50 w-full border-b border-subtle bg-background">
+            <div className="mx-auto max-w-7xl px-4 py-3">
               <TopNav />
             </div>
           </header>

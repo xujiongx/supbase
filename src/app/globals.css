@@ -137,3 +137,7 @@ body {
 .dark .prose pre { background: #0a0a0a; border-color: var(--color-border-dark); }
 .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 { color: var(--foreground); }
 .dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4, .dark .prose h5, .dark .prose h6 { color: var(--foreground); }
+
+/* Subtle border utility */
+.border-subtle { border-color: var(--color-border); }
+.dark .border-subtle { border-color: var(--color-border-dark); }

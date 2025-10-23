@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
+import * as Tooltip from "@radix-ui/react-tooltip";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -75,54 +76,50 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-start gap-6 py-24 px-16 bg-white dark:bg-black sm:items-start">
-        <h1 className="text-3xl font-semibold text-black dark:text-zinc-50">登录</h1>
-        <div className="flex gap-3">
-          <Link href="/" className="rounded-md border px-3 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50">返回首页</Link>
-          <Link href="/todos" className="rounded-md border px-3 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50">进入 Todos</Link>
-        </div>
-
-        {banner && (
-          <div className={`w-full max-w-md rounded-md border px-3 py-2 text-sm ${banner.type === "success" ? "border-green-500 text-green-700 dark:text-green-400" : "border-red-500 text-red-700 dark:text-red-400"}`}>
-            {banner.text}
-          </div>
-        )}
-
-        {!isSupabaseConfigured ? (
-          <div className="text-zinc-600 dark:text-zinc-400">
-            请在项目根目录创建 .env.local 并填入 NEXT_PUBLIC_SUPABASE_URL 与 NEXT_PUBLIC_SUPABASE_ANON_KEY，然后重启开发服务器。
-          </div>
-        ) : session ? (
-          <div className="flex items-center justify-between w-full max-w-md rounded-md border px-3 py-2">
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">
-              已登录：{session.user.email || session.user.id}
-            </span>
-            <button onClick={signOut} className="rounded-md border px-2 py-1 text-sm hover:bg-black/[.04] dark:hover:bg-[#1a1a1a]">
-              退出登录
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 w-full max-w-md">
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") sendMagicLink();
-              }}
-              placeholder="输入邮箱以登录（魔法链接）"
-              className="flex-1 rounded-md border px-3 py-2 text-black dark:text-zinc-100 dark:bg-zinc-900"
-            />
-            <button
-              onClick={sendMagicLink}
-              disabled={loading || !isValidEmail(email.trim())}
-              className="rounded-md bg-foreground px-4 py-2 text-background hover:bg-[#383838] dark:hover:bg-[#ccc] disabled:opacity-60"
-            >
-              {loading ? "发送中..." : "发送登录链接"}
-            </button>
-          </div>
-        )}
-      </main>
+    <div className="font-sans">
+      <Tooltip.Provider delayDuration={200}>
+        <main className="space-y-8">
+          {/* 顶部标题与快捷入口 */}
+          <section className="space-y-4">
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">登录</h1>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/" className="btn btn-outline">返回首页</Link>
+            </div>
+          </section>
+          
+          {banner && (<div className="card px-3 py-2 text-sm">{banner.text}</div>)}
+          
+          {!isSupabaseConfigured ? (
+            <div className="card p-4"><div className="text-sm opacity-70">请在项目根目录创建 <span className="font-medium">.env.local</span> 并填入 <span className="font-medium">NEXT_PUBLIC_SUPABASE_URL</span> 与 <span className="font-medium">NEXT_PUBLIC_SUPABASE_ANON_KEY</span>，然后重启开发服务器。</div></div>
+          ) : session ? (
+            <div className="card flex items-center justify-between px-3 py-2">
+              <span className="text-sm opacity-80">已登录：{session.user.email || session.user.id}</span>
+              <button onClick={signOut} className="btn btn-outline text-sm">退出登录</button>
+            </div>
+          ) : (
+            <div className="card p-3 space-y-3">
+              <div className="flex w-full gap-2">
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") sendMagicLink(); }}
+                  placeholder="输入邮箱以登录（魔法链接）"
+                  className="input flex-1"
+                  aria-label="邮箱"
+                  type="email"
+                />
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <button onClick={sendMagicLink} disabled={loading || !isValidEmail(email.trim())} className="btn btn-primary">{loading ? "发送中..." : "发送登录链接"}</button>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content className="card px-2 py-1 text-xs" sideOffset={6}>我们会给你的邮箱发送登录链接<Tooltip.Arrow className="opacity-40" /></Tooltip.Content>
+                </Tooltip.Root>
+              </div>
+              <p className="text-xs opacity-60">使用魔法链接登录，无需密码。</p>
+            </div>
+          )}
+        </main>
+      </Tooltip.Provider>
     </div>
   );
 }
