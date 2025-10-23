@@ -114,24 +114,24 @@ export default function TodosPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-start gap-6 py-24 px-16 bg-white dark:bg-black sm:items-start">
-        <h1 className="text-3xl font-semibold text-black dark:text-zinc-50">Todos</h1>
+    <div className="flex min-h-screen items-center justify-center font-sans">
+      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-start gap-6 py-24 px-16 sm:items-start">
+        <h1 className="text-3xl font-semibold">Todos</h1>
         <div className="flex gap-3">
-          <Link href="/" className="rounded-md border px-3 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50">返回首页</Link>
-          <Link href="/login" className="rounded-md border px-3 py-2 hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] text-black dark:text-zinc-50">登录</Link>
+          <Link href="/" className="btn btn-outline">返回首页</Link>
+          <Link href="/login" className="btn btn-outline">登录</Link>
         </div>
 
         {!isSupabaseConfigured ? (
-          <div className="text-zinc-600 dark:text-zinc-400">
+          <div className="text-sm opacity-70">
             请在项目根目录创建 .env.local 并填入 NEXT_PUBLIC_SUPABASE_URL 与 NEXT_PUBLIC_SUPABASE_ANON_KEY，然后重启开发服务器。
           </div>
         ) : !session ? (
-          <div className="text-zinc-600 dark:text-zinc-400">
+          <div className="text-sm opacity-70">
             请先登录以查看你的待办。或
             <button
               onClick={() => router.push("/login")}
-              className="ml-1 underline underline-offset-4 text-black dark:text-zinc-100"
+              className="ml-1 underline underline-offset-4"
             >
               立即去登录
             </button>
@@ -139,7 +139,7 @@ export default function TodosPage() {
         ) : (
           <>
             {banner && (
-              <div className={`w-full max-w-md rounded-md border px-3 py-2 text-sm ${banner.type === "success" ? "border-green-500 text-green-700 dark:text-green-400" : "border-red-500 text-red-700 dark:text-red-400"}`}>
+              <div className={`w-full max-w-md card px-3 py-2 text-sm ${banner.type === "success" ? "border-green-500" : "border-red-500"}`}>
                 {banner.text}
               </div>
             )}
@@ -150,12 +150,12 @@ export default function TodosPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
                 placeholder="输入新的待办..."
-                className="flex-1 rounded-md border px-3 py-2 text-black dark:text-zinc-100 dark:bg-zinc-900"
+                className="input flex-1"
               />
               <button
                 onClick={handleAdd}
                 disabled={!title.trim()}
-                className="rounded-md bg-foreground px-4 py-2 text-background hover:bg-[#383838] dark:hover:bg-[#ccc] disabled:opacity-60"
+                className="btn btn-primary"
               >
                 添加
               </button>
@@ -163,12 +163,12 @@ export default function TodosPage() {
 
             {loading ? (
               <div className="w-full space-y-2">
-                <div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
-                <div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
-                <div className="h-10 w-full animate-pulse rounded-md bg-zinc-200 dark:bg-zinc-800" />
+                <div className="h-10 w-full animate-pulse skeleton" />
+                <div className="h-10 w-full animate-pulse skeleton" />
+                <div className="h-10 w-full animate-pulse skeleton" />
               </div>
             ) : todos.length === 0 ? (
-              <div className="text-zinc-600 dark:text-zinc-400">
+              <div className="text-sm opacity-70">
                 暂无待办，输入上方文本并点击“添加”来创建你的第一个待办。
               </div>
             ) : (
@@ -176,7 +176,7 @@ export default function TodosPage() {
                 {todos.map((t) => (
                   <li
                     key={t.id}
-                    className="flex items-center justify-between rounded-md border px-3 py-2"
+                    className="card flex items-center justify-between px-3 py-2"
                   >
                     <div className="flex items-center gap-3">
                       <input
@@ -184,13 +184,13 @@ export default function TodosPage() {
                         checked={t.is_complete}
                         onChange={() => toggleComplete(t)}
                       />
-                      <span className={t.is_complete ? "line-through text-zinc-500" : ""}>
+                      <span className={t.is_complete ? "line-through opacity-60" : ""}>
                         {t.title}
                       </span>
                     </div>
                     <button
                       onClick={() => removeTodo(t.id)}
-                      className="rounded-md border px-2 py-1 text-sm hover:bg-black/[.04] dark:hover:bg-[#1a1a1a]"
+                      className="btn btn-outline text-sm"
                     >
                       删除
                     </button>

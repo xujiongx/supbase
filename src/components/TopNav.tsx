@@ -4,22 +4,36 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
+import { usePathname } from "next/navigation";
 
 export default function TopNav() {
   const [session, setSession] = useState<Session | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [isDark, setIsDark] = useState<boolean>(false);
+
+  useEffect(() => {
+    // 初始同步主题：优先 localStorage，其次系统偏好
+    const stored =
+      typeof window !== "undefined" ? localStorage.getItem("theme") : null;
+    const systemPrefersDark =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const enableDark = stored ? stored === "dark" : systemPrefersDark;
+    setIsDark(enableDark);
+    const html = document.documentElement;
+    html.classList.toggle("dark", enableDark); // 兼容 Tailwind 暗色选择器
+    html.setAttribute("data-theme", enableDark ? "dark" : "light"); // 覆盖系统偏好
+  }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
     const client = getSupabase()!;
-    // 初始化获取会话
     client.auth.getSession().then(({ data }) => {
       const s = data.session ?? null;
-      // 异步调度，避免同步 setState 的警告
       const t = setTimeout(() => setSession(s), 0);
       return () => clearTimeout(t);
     });
-    // 监听会话变化
     const { data: sub } = client.auth.onAuthStateChange((_event, s) => {
       setSession(s ?? null);
     });
@@ -39,48 +53,82 @@ export default function TopNav() {
     }
   };
 
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    const html = document.documentElement;
+    html.classList.toggle("dark", next);
+    html.setAttribute("data-theme", next ? "dark" : "light");
+    try {
+      localStorage.setItem("theme", next ? "dark" : "light");
+    } catch {}
+  };
+
+  const label = isDark ? "切换到浅色" : "切换到深色";
+  const pathname = usePathname();
   return (
     <div className="flex items-center justify-between">
-      {/* 左侧品牌与导航 */}
       <div className="flex items-center gap-6">
-        <Link href="/" className="text-lg font-semibold text-black dark:text-zinc-50">
+        <Link href="/" className="text-lg font-semibold tracking-tight">
           我的应用
         </Link>
-        <nav className="hidden sm:flex items-center gap-4 text-sm">
-          <Link href="/todos" className="text-zinc-700 hover:underline dark:text-zinc-300">
+        <nav className="hidden sm:flex items-center gap-2 md:gap-6 text-sm">
+          <Link
+            href="/todos"
+            aria-current={pathname?.startsWith("/todos") ? "page" : undefined}
+            className={
+              pathname?.startsWith("/todos")
+                ? "border-b-2 border-current"
+                : "opacity-80 hover:opacity-100 hover:underline"
+            }
+          >
             Todos
           </Link>
-          <Link href="/notes" className="text-zinc-700 hover:underline dark:text-zinc-300">
+          <Link
+            href="/notes"
+            aria-current={pathname?.startsWith("/notes") ? "page" : undefined}
+            className={
+              pathname?.startsWith("/notes")
+                ? "border-b-2 border-current"
+                : "opacity-80 hover:opacity-100 hover:underline"
+            }
+          >
             每日笔记
           </Link>
         </nav>
       </div>
 
-      {/* 右上角登录/退出 UI */}
       <div className="flex items-center gap-3">
         {!isSupabaseConfigured ? (
-          <span className="text-xs text-zinc-600 dark:text-zinc-400">未配置 Supabase</span>
+          <span className="text-xs rounded-full border px-2 py-1 opacity-70">
+            未配置 Supabase
+          </span>
         ) : session ? (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-zinc-700 dark:text-zinc-300">
+            <span className="text-xs rounded-full border px-2 py-1 opacity-70">
               {session.user.email || session.user.id}
             </span>
             <button
               onClick={signOut}
               disabled={signingOut}
-              className="rounded-md border px-3 py-1 text-sm hover:bg-black/[.04] dark:hover:bg-[#1a1a1a] disabled:opacity-60"
+              className="btn btn-outline"
             >
               退出登录
             </button>
           </div>
         ) : (
-          <Link
-            href="/login"
-            className="rounded-md bg-foreground px-3 py-1 text-sm text-background hover:bg-[#383838] dark:hover:bg-[#ccc]"
-          >
+          <Link href="/login" className="btn btn-primary">
             登录
           </Link>
         )}
+        <button
+          onClick={toggleTheme}
+          className="btn btn-outline"
+          aria-label={label}
+          title={label}
+        >
+          <span aria-hidden="true">{isDark ? "☀︎" : "☾"}</span>
+        </button>
       </div>
     </div>
   );
