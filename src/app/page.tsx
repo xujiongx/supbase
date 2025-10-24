@@ -22,18 +22,25 @@ export default function Home() {
           用简单，记录朝朝暮暮。
         </p>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/notes" className="btn btn-primary">
+          <Link href="/notes" className="btn btn-outline">
             开始记事
           </Link>
           <Link href="/todos" className="btn btn-outline">
             管理待办
           </Link>
-          <Link href="/discover" className="btn btn-outline">
-            每日发现
-          </Link>
         </div>
 
         {/* 用户状态与操作已移至顶部导航，首页保持极简风格 */}
+      </section>
+
+      {/* 今日概览引导卡片 */}
+      <section className="card p-4 space-y-3">
+        <h2 className="text-base md:text-lg font-medium">今朝概览</h2>
+        <p className="text-sm opacity-70">查看今日待办与笔记摘要。</p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/zhaomu" className="btn btn-primary">前往今朝</Link>
+          <Link href="/discover" className="btn btn-outline">去发现</Link>
+        </div>
       </section>
 
       {/* 特性栅格 */}

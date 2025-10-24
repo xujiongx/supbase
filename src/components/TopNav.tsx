@@ -125,6 +125,17 @@ export default function TopNav() {
         </Link>
         <nav className="hidden sm:flex items-center gap-4 md:gap-6 text-sm">
           <Link
+            href="/zhaomu"
+            aria-current={pathname?.startsWith("/zhaomu") ? "page" : undefined}
+            className={
+              pathname?.startsWith("/zhaomu")
+                ? "border-b-2 border-current"
+                : "opacity-80 hover:opacity-100 hover:underline"
+            }
+          >
+            今朝
+          </Link>
+          <Link
             href="/todos"
             aria-current={pathname?.startsWith("/todos") ? "page" : undefined}
             className={
@@ -148,7 +159,9 @@ export default function TopNav() {
           </Link>
           <Link
             href="/discover"
-            aria-current={pathname?.startsWith("/discover") ? "page" : undefined}
+            aria-current={
+              pathname?.startsWith("/discover") ? "page" : undefined
+            }
             className={
               pathname?.startsWith("/discover")
                 ? "border-b-2 border-current"
@@ -216,6 +229,11 @@ export default function TopNav() {
               <Dialog.Close asChild>
                 <Link href="/" className="btn btn-outline w-full">
                   首页
+                </Link>
+              </Dialog.Close>
+              <Dialog.Close asChild>
+                <Link href="/zhaomu" className="btn btn-outline w-full">
+                  今朝
                 </Link>
               </Dialog.Close>
               <Dialog.Close asChild>
