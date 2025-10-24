@@ -28,6 +28,9 @@ export default function Home() {
           <Link href="/todos" className="btn btn-outline">
             管理待办
           </Link>
+          <Link href="/discover" className="btn btn-outline">
+            每日发现
+          </Link>
         </div>
 
         {/* 用户状态与操作已移至顶部导航，首页保持极简风格 */}

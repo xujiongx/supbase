@@ -16,8 +16,12 @@ export default function TopNav() {
 
   useEffect(() => {
     // 初始同步主题：优先 localStorage，其次系统偏好
-    const stored = typeof window !== "undefined" ? localStorage.getItem("theme") : null;
-    const systemPrefersDark = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const stored =
+      typeof window !== "undefined" ? localStorage.getItem("theme") : null;
+    const systemPrefersDark =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches;
     const enableDark = stored ? stored === "dark" : systemPrefersDark;
     setIsDark(enableDark);
     const html = document.documentElement;
@@ -44,9 +48,16 @@ export default function TopNav() {
   useEffect(() => {
     // 根据输入设备与 UA 进行移动端判断：PC 端不展示汉堡菜单
     try {
-      const coarse = typeof window !== "undefined" && window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-      const ua = typeof navigator !== "undefined" ? navigator.userAgent.toLowerCase() : "";
-      const isMobileUA = /mobile|android|iphone|ipod|ipad|windows phone|blackberry/.test(ua);
+      const coarse =
+        typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(pointer: coarse)").matches;
+      const ua =
+        typeof navigator !== "undefined"
+          ? navigator.userAgent.toLowerCase()
+          : "";
+      const isMobileUA =
+        /mobile|android|iphone|ipod|ipad|windows phone|blackberry/.test(ua);
       setIsMobileDevice(coarse || isMobileUA);
     } catch {
       setIsMobileDevice(false);
@@ -135,35 +146,36 @@ export default function TopNav() {
           >
             每日笔记
           </Link>
+          <Link
+            href="/discover"
+            aria-current={pathname?.startsWith("/discover") ? "page" : undefined}
+            className={
+              pathname?.startsWith("/discover")
+                ? "border-b-2 border-current"
+                : "opacity-80 hover:opacity-100 hover:underline"
+            }
+          >
+            每日发现
+          </Link>
         </nav>
       </div>
 
       {/* 移动端右侧：仅在小屏显示已登录用户或登录按钮，靠右 */}
       <div className="flex sm:hidden items-center gap-2 ml-auto">
-        {isSupabaseConfigured ? (
-          session ? (
-            <span className="text-xs rounded-full border px-2 py-1 opacity-70 max-w-[50vw] truncate">
-              {session.user.email || session.user.id}
-            </span>
-          ) : (
-            <Link href="/login" className="btn btn-primary btn-sm">
-              登录
-            </Link>
-          )
-        ) : (
-          <span className="text-xs rounded-full border px-2 py-1 opacity-70">
-            未配置 Supabase
+        {session ? (
+          <span className="text-xs rounded-full border px-2 py-1 opacity-70 max-w-[50vw] truncate">
+            {session.user.email || session.user.id}
           </span>
+        ) : (
+          <Link href="/login" className="btn btn-primary btn-sm">
+            登录
+          </Link>
         )}
       </div>
 
       {/* 右侧控制区：在小屏隐藏，移动端通过抽屉操作 */}
       <div className="hidden sm:flex items-center gap-3">
-        {!isSupabaseConfigured ? (
-          <span className="text-xs rounded-full border px-2 py-1 opacity-70">
-            未配置 Supabase
-          </span>
-        ) : session ? (
+        {session ? (
           <div className="flex items-center gap-3">
             <span className="text-xs rounded-full border px-2 py-1 opacity-70 max-w-[200px] truncate">
               {session.user.email || session.user.id}
@@ -214,6 +226,11 @@ export default function TopNav() {
               <Dialog.Close asChild>
                 <Link href="/notes" className="btn btn-outline w-full">
                   每日笔记
+                </Link>
+              </Dialog.Close>
+              <Dialog.Close asChild>
+                <Link href="/discover" className="btn btn-outline w-full">
+                  每日发现
                 </Link>
               </Dialog.Close>
             </nav>
