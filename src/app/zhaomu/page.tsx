@@ -208,6 +208,211 @@ export default function ZhaomuPage() {
     weekday: "long",
   });
 
+  // 分享图片：状态与方法
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
+  const [shareGenerating, setShareGenerating] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+
+  function wrapText(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number,
+    maxLines = 6,
+  ) {
+    const words = text.split("");
+    let line = "";
+    let lines = 0;
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n];
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, y);
+        line = words[n];
+        y += lineHeight;
+        lines++;
+        if (lines >= maxLines) break;
+      } else {
+        line = testLine;
+      }
+    }
+    if (lines < maxLines) ctx.fillText(line, x, y);
+  }
+
+  async function generateShareImage() {
+    try {
+      setShareGenerating(true);
+      setShareError(null);
+      const width = 1080;
+      const height = 1440;
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 不支持");
+
+      // 背景渐变
+      const grad = ctx.createLinearGradient(0, 0, 0, height);
+      grad.addColorStop(0, "#111827");
+      grad.addColorStop(1, "#1f2937");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // 标题
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 64px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillText("今朝·今日进度", 60, 120);
+
+      // 日期
+      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillStyle = "#93c5fd";
+      ctx.fillText(todayStr, 60, 175);
+
+      // 分割线
+      ctx.strokeStyle = "#374151";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(60, 200);
+      ctx.lineTo(width - 60, 200);
+      ctx.stroke();
+
+      // 天气
+      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillStyle = "#ffffff";
+      const weatherTitleY = 270;
+      ctx.fillText("天气", 60, weatherTitleY);
+      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
+      const weatherText = weather
+        ? `${weather.text ?? "-"} ${weather.temp ?? "-"}℃ 体感 ${
+            weather.feelsLike ?? "-"
+          }℃ 风向 ${weather.windDir ?? "-"} 风力 ${weather.windScale ?? "-"}`
+        : "暂无天气信息";
+      wrapText(ctx, weatherText, 60, weatherTitleY + 48, width - 120, 44, 2);
+
+      // 万年历
+      const calBaseY = weatherTitleY + 150;
+      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("万年历", 60, calBaseY);
+      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
+      const lunarLine = calendar?.lunarText
+        ? `农历：${calendar.lunarText}`
+        : calendar?.lunar
+        ? `农历：${calendar.lunar?.cnYear ?? ""}年 ${
+            calendar.lunar?.cnMonth ?? ""
+          }${calendar.lunar?.cnDay ?? ""}`
+        : "农历：-";
+      wrapText(ctx, lunarLine, 60, calBaseY + 48, width - 120, 44, 2);
+      if (calendar?.cyclical) {
+        const cyc = `干支：${calendar.cyclical.year ?? "-"}年 ${
+          calendar.cyclical.month ?? "-"
+        }月 ${calendar.cyclical.day ?? "-"}日`;
+        wrapText(ctx, cyc, 60, calBaseY + 96, width - 120, 44, 1);
+      }
+      if (calendar?.almanacSummary) {
+        const summ = `宜：${calendar.almanacSummary.yi ?? "-"}；忌：${
+          calendar.almanacSummary.ji ?? "-"
+        }`;
+        wrapText(ctx, summ, 60, calBaseY + 144, width - 120, 44, 2);
+      }
+
+      // 待办
+      const todosBaseY = calBaseY + 240;
+      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("待办", 60, todosBaseY);
+      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
+      const todosLine = `完成 ${todosCompleted}/${todosTotal}`;
+      ctx.fillText(todosLine, 60, todosBaseY + 48);
+      const listTodos = todosToday.slice(0, 5);
+      ctx.font = "400 30px system-ui, -apple-system, Segoe UI, Roboto";
+      let yTodo = todosBaseY + 92;
+      listTodos.forEach((t) => {
+        const prefix = t.is_complete ? "✅ " : "• ";
+        wrapText(ctx, prefix + t.title, 60, yTodo, width - 120, 42, 2);
+        yTodo += 60;
+      });
+      if (listTodos.length === 0) {
+        ctx.fillStyle = "#9ca3af";
+        ctx.fillText("今天还没有待办", 60, yTodo);
+        ctx.fillStyle = "#ffffff";
+      }
+
+      // 笔记
+      const notesBaseY = todosBaseY + 420;
+      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("笔记", 60, notesBaseY);
+      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
+      const notesLine = `新增 ${notesTotal} 条`;
+      ctx.fillText(notesLine, 60, notesBaseY + 48);
+      const listNotes = notesToday.slice(0, 3);
+      ctx.font = "400 30px system-ui, -apple-system, Segoe UI, Roboto";
+      let yNote = notesBaseY + 92;
+      listNotes.forEach((n) => {
+        wrapText(ctx, "• " + n.content, 60, yNote, width - 120, 42, 2);
+        yNote += 60;
+      });
+      if (listNotes.length === 0) {
+        ctx.fillStyle = "#9ca3af";
+        ctx.fillText("今天还没有笔记", 60, yNote);
+        ctx.fillStyle = "#ffffff";
+      }
+
+      // 署名
+      ctx.font = "400 28px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillStyle = "#9ca3af";
+      ctx.fillText("由 朝暮记 生成", 60, height - 60);
+
+      const url = canvas.toDataURL("image/png");
+      setShareImageUrl(url);
+    } catch (e) {
+      setShareError(e instanceof Error ? e.message : "生成失败");
+    } finally {
+      setShareGenerating(false);
+    }
+  }
+
+  function downloadShareImage() {
+    if (!shareImageUrl) return;
+    const a = document.createElement("a");
+    a.href = shareImageUrl;
+    a.download = `今朝进度_${new Date().toISOString().slice(0, 10)}.png`;
+    a.click();
+  }
+
+  async function copyShareImageToClipboard() {
+    if (!shareImageUrl || !("clipboard" in navigator)) return;
+    const res = await fetch(shareImageUrl);
+    const blob = await res.blob();
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    } catch (e) {
+      setShareError("复制到剪贴板失败，请尝试下载后手动分享");
+    }
+  }
+
+  async function systemShareImage() {
+    if (!shareImageUrl || !("share" in navigator)) return;
+    const res = await fetch(shareImageUrl);
+    const blob = await res.blob();
+    const file = new File([blob], `今朝进度_${new Date().toISOString().slice(0, 10)}.png`, {
+      type: "image/png",
+    });
+    if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+      setShareError("当前设备不支持图片分享，请下载图片后手动分享");
+      return;
+    }
+    try {
+      await navigator.share({ files: [file], title: "今朝 · 今日进度" });
+    } catch {
+      // 用户取消或失败，无需处理
+    }
+  }
+
   return (
     <div className="font-sans space-y-8">
       <section className="space-y-1">
@@ -296,7 +501,7 @@ export default function ZhaomuPage() {
                 <div>
                   农历：
                   {calendar.lunarText ||
-                    `${calendar?.lunar?.cnYear}年 ${calendar?.lunar?.cnMonth}${calendar?.lunar?.cnDay}`}{" "}
+                    `${calendar?.lunar?.cnYear}年 ${calendar?.lunar?.cnMonth}${calendar?.lunar?.cnDay}`} {" "}
                   {calendar?.lunar?.hour ? `（${calendar.lunar.hour}）` : ""}
                 </div>
               )}
@@ -306,7 +511,7 @@ export default function ZhaomuPage() {
               {calendar.astro && <div>星座：{calendar.astro}</div>}
               {calendar.cyclical && (
                 <div>
-                  干支：{calendar.cyclical.year}年 {calendar.cyclical.month}月{" "}
+                  干支：{calendar.cyclical.year}年 {calendar.cyclical.month}月 {" "}
                   {calendar.cyclical.day}日
                 </div>
               )}
@@ -509,6 +714,62 @@ export default function ZhaomuPage() {
         </section>
       )}
 
+      {/* 分享区块：生成图片用于社交平台分享 */}
+      <section className="card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">📣</span>
+            <h2 className="text-base md:text-lg font-medium">分享今日进度</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={generateShareImage}
+              disabled={shareGenerating}
+              className="btn btn-primary"
+            >
+              {shareGenerating ? "生成中..." : "生成分享图片"}
+            </button>
+            <button
+              onClick={downloadShareImage}
+              disabled={!shareImageUrl}
+              className="btn btn-outline"
+            >
+              下载图片
+            </button>
+          </div>
+        </div>
+        {shareError && (
+          <div className="card px-3 py-2 text-sm">{shareError}</div>
+        )}
+        {shareImageUrl ? (
+          <div className="space-y-3">
+            <img
+              src={shareImageUrl}
+              alt="今日进度分享图片预览"
+              className="w-full max-w-xl rounded-md border"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={copyShareImageToClipboard}
+                className="btn btn-outline"
+              >
+                复制到剪贴板
+              </button>
+              <button
+                onClick={systemShareImage}
+                className="btn btn-outline"
+              >
+                通过系统分享
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-sm opacity-60">
+            生成后将显示预览，并可下载或直接分享。
+          </div>
+        )}
+      </section>
+
       {/* 天气与万年历：已移至顶部展示 */}
     </div>
   );
@@ -563,7 +824,6 @@ type CalendarLunar = {
 };
 
 type CalendarData = {
-  // 上游原始字段
   year?: number;
   leapYear?: boolean;
   month?: number;
@@ -582,7 +842,6 @@ type CalendarData = {
   festivals?: string[];
   lunar?: CalendarLunar;
   almanac?: CalendarAlmanac;
-  // 友好补充字段（由后端追加）
   date?: string;
   week?: string;
   lunarText?: string;
