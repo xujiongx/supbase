@@ -3,7 +3,6 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function Home() {
-
   return (
     <div className="font-sans max-w-3xl md:max-w-4xl mx-auto px-4 space-y-12">
       {/* Hero 区域 */}
@@ -19,7 +18,9 @@ export default function Home() {
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
           朝暮记
         </h1>
-        <p className="text-sm md:text-base opacity-70">用简单，记录朝朝暮暮。</p>
+        <p className="text-sm md:text-base opacity-70">
+          用简单，记录朝朝暮暮。
+        </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Link href="/notes" className="btn btn-primary">
             开始记事
@@ -55,13 +56,17 @@ export default function Home() {
       </section>
 
       {/* 品牌介绍 */}
-      <section className="card p-6 space-y-3">
-        <p className="text-base md:text-lg leading-8 opacity-90">
-          朝暮记 —— 用简单，记满朝朝暮暮不必复杂，不用长篇大论。在这里，1 分钟就能记下清晨的阳光、傍晚的晚风，或是一天里的小情绪。
-        </p>
-        <p className="text-base md:text-lg leading-8 opacity-90">
-          以日月为引，把每个平凡的朝暮，都变成专属的时光印记。简单记录，慢慢沉淀，原来日子可以这样温柔。
-        </p>
+
+      <section className="card p-6 md:p-8">
+        <div className="prose prose-sm md:prose prose-neutral dark:prose-invert mx-auto text-center max-w-[60ch]">
+          <p className="leading-relaxed">
+            朝暮记 —— 用简单，记满朝朝暮暮不必复杂，不用长篇大论。在这里，1
+            分钟就能记下清晨的阳光、傍晚的晚风，或是一天里的小情绪。
+          </p>
+          <p className="leading-relaxed">
+            以日月为引，把每个平凡的朝暮，都变成专属的时光印记。简单记录，慢慢沉淀，原来日子可以这样温柔。
+          </p>
+        </div>
       </section>
     </div>
   );

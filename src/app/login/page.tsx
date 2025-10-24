@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
@@ -11,7 +10,10 @@ export default function LoginPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [banner, setBanner] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [banner, setBanner] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -48,7 +50,10 @@ export default function LoginPage() {
       return;
     }
     if (!isSupabaseConfigured) {
-      setBanner({ type: "error", text: "请先在 .env.local 配置 Supabase URL 和 anon key" });
+      setBanner({
+        type: "error",
+        text: "请先在 .env.local 配置 Supabase URL 和 anon key",
+      });
       return;
     }
     setLoading(true);
@@ -60,7 +65,10 @@ export default function LoginPage() {
         options: { emailRedirectTo: window.location.origin },
       });
       if (error) throw error;
-      setBanner({ type: "success", text: "登录链接已发送，请查收邮箱并点击链接完成登录" });
+      setBanner({
+        type: "success",
+        text: "登录链接已发送，请查收邮箱并点击链接完成登录",
+      });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       setBanner({ type: "error", text: msg || "发送失败" });
@@ -81,17 +89,23 @@ export default function LoginPage() {
         <main className="space-y-8">
           {/* 顶部标题与快捷入口 */}
           <section className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">登录</h1>
+            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
+              登录
+            </h1>
           </section>
-          
-          {banner && (<div className="card px-3 py-2 text-sm">{banner.text}</div>)}
-          
-          {!isSupabaseConfigured ? (
-            <div className="card p-4"><div className="text-sm opacity-70">请在项目根目录创建 <span className="font-medium">.env.local</span> 并填入 <span className="font-medium">NEXT_PUBLIC_SUPABASE_URL</span> 与 <span className="font-medium">NEXT_PUBLIC_SUPABASE_ANON_KEY</span>，然后重启开发服务器。</div></div>
-          ) : session ? (
+
+          {banner && (
+            <div className="card px-3 py-2 text-sm">{banner.text}</div>
+          )}
+
+          {session ? (
             <div className="card flex items-center justify-between px-3 py-2">
-              <span className="text-sm opacity-80">已登录：{session.user.email || session.user.id}</span>
-              <button onClick={signOut} className="btn btn-outline text-sm">退出登录</button>
+              <span className="text-sm opacity-80">
+                已登录：{session.user.email || session.user.id}
+              </span>
+              <button onClick={signOut} className="btn btn-outline text-sm">
+                退出登录
+              </button>
             </div>
           ) : (
             <div className="card p-3 space-y-3">
@@ -99,7 +113,9 @@ export default function LoginPage() {
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") sendMagicLink(); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") sendMagicLink();
+                  }}
                   placeholder="输入邮箱以登录（魔法链接）"
                   className="input flex-1"
                   aria-label="邮箱"
@@ -107,9 +123,21 @@ export default function LoginPage() {
                 />
                 <Tooltip.Root>
                   <Tooltip.Trigger asChild>
-                    <button onClick={sendMagicLink} disabled={loading || !isValidEmail(email.trim())} className="btn btn-primary">{loading ? "发送中..." : "发送登录链接"}</button>
+                    <button
+                      onClick={sendMagicLink}
+                      disabled={loading || !isValidEmail(email.trim())}
+                      className="btn btn-primary"
+                    >
+                      {loading ? "发送中..." : "发送登录链接"}
+                    </button>
                   </Tooltip.Trigger>
-                  <Tooltip.Content className="card px-2 py-1 text-xs" sideOffset={6}>我们会给你的邮箱发送登录链接<Tooltip.Arrow className="opacity-40" /></Tooltip.Content>
+                  <Tooltip.Content
+                    className="card px-2 py-1 text-xs"
+                    sideOffset={6}
+                  >
+                    我们会给你的邮箱发送登录链接
+                    <Tooltip.Arrow className="opacity-40" />
+                  </Tooltip.Content>
                 </Tooltip.Root>
               </div>
               <p className="text-xs opacity-60">使用魔法链接登录，无需密码。</p>

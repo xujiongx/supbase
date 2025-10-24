@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { getSupabase } from "@/lib/supabaseClient";
 import { useSupabaseSession } from "@/lib/useSupabaseSession";
 import ReactMarkdown from "react-markdown";
@@ -127,14 +126,7 @@ export default function NotesPage() {
             </h1>
           </section>
 
-          {!isSupabaseConfigured ? (
-            <div className="card p-4">
-              <div className="text-sm opacity-70">
-                请在 <span className="font-medium">.env.local</span> 配置
-                Supabase 环境变量
-              </div>
-            </div>
-          ) : !session ? (
+          {!session ? (
             <div className="card p-4">
               <div className="text-sm opacity-70">
                 请先登录以查看或添加你的每日笔记。

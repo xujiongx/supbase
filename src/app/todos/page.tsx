@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabaseClient";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -162,19 +161,7 @@ export default function TodosPage() {
           </section>
 
           {/* 状态说明或登录提示 */}
-          {!isSupabaseConfigured ? (
-            <div className="card p-4">
-              <div className="text-sm opacity-70">
-                请在项目根目录创建{" "}
-                <span className="font-medium">.env.local</span> 并填入{" "}
-                <span className="font-medium">NEXT_PUBLIC_SUPABASE_URL</span> 与{" "}
-                <span className="font-medium">
-                  NEXT_PUBLIC_SUPABASE_ANON_KEY
-                </span>
-                ，然后重启开发服务器。
-              </div>
-            </div>
-          ) : !session ? (
+          {!session ? (
             <div className="card p-4">
               <div className="text-sm opacity-70">
                 请先登录以查看你的待办。
