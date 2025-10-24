@@ -16,26 +16,25 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Calendar API 返回错误", data: json }, { status: 500 });
     }
     const data = json.data;
-    const payload = {
-      date: data.year && data.month && data.day ? `${data.year}-${String(data.month).padStart(2,"0")}-${String(data.day).padStart(2,"0")}` : undefined,
+    // 返回完整数据，同时附加一些易读的友好字段
+    const output = {
+      ...data,
+      date: data.year && data.month && data.day ? `${data.year}-${String(data.month).padStart(2, "0")}-${String(data.day).padStart(2, "0")}` : undefined,
       week: data.cnWeek,
-      lunar: data.lunar ? `${data.lunar.cnYear}年 ${data.lunar.cnMonth}${data.lunar.cnDay}` : undefined,
-      zodiac: data.lunar?.zodiac,
+      lunarText: data.lunar ? `${data.lunar.cnYear}年 ${data.lunar.cnMonth}${data.lunar.cnDay}` : undefined,
       cyclical: {
         year: data.lunar?.cyclicalYear,
         month: data.lunar?.cyclicalMonth,
         day: data.lunar?.cyclicalDay,
       },
-      solarTerms: data.lunar?.solarTerms || {},
-      almanac: {
+      almanacSummary: {
         yi: data.almanac?.yi,
         ji: data.almanac?.ji,
         chong: data.almanac?.chong,
         sha: data.almanac?.sha,
       },
-      festivals: data.festivals || [],
     };
-    return NextResponse.json(payload);
+    return NextResponse.json(output);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

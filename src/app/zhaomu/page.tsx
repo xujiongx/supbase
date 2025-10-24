@@ -84,26 +84,99 @@ export default function ZhaomuPage() {
   const notesTotal = notesToday.length;
 
   // 新增：天气与万年历数据状态
-  const [weather, setWeather] = useState<{ temp?: string; text?: string; windDir?: string; windScale?: string; updateTime?: string } | null>(null);
-  const [calendar, setCalendar] = useState<{ date?: string; week?: string; lunar?: string; zodiac?: string; cyclical?: { year?: string; month?: string; day?: string }; solarTerms?: Record<string, string>; almanac?: { yi?: string; ji?: string; chong?: string; sha?: string }; festivals?: string[] } | null>(null);
-  const [loadingExtra, setLoadingExtra] = useState({ weather: false, calendar: false });
-  const [errorExtra, setErrorExtra] = useState<{ weather?: string; calendar?: string }>({});
+  const [weather, setWeather] = useState<{
+    temp?: string;
+    feelsLike?: string;
+    text?: string;
+    windDir?: string;
+    windScale?: string;
+    windSpeed?: string;
+    humidity?: string;
+    precip?: string;
+    pressure?: string;
+    vis?: string;
+    cloud?: string;
+    dew?: string;
+    obsTime?: string;
+    updateTime?: string;
+    fxLink?: string;
+  } | null>(null);
+  const [calendar, setCalendar] = useState<CalendarData | null>(null);
+  const [loadingExtra, setLoadingExtra] = useState({
+    weather: false,
+    calendar: false,
+  });
+  const [errorExtra, setErrorExtra] = useState<{
+    weather?: string;
+    calendar?: string;
+  }>({});
 
   // 拉取天气与万年历（不依赖登录）
   useEffect(() => {
-    const fetchWeather = async () => {
+    const getCoords = (): Promise<{ lat: number; lon: number } | null> => {
+      return new Promise((resolve) => {
+        if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+          resolve(null);
+          return;
+        }
+        const geo = navigator.geolocation;
+        let done = false;
+        const timer = setTimeout(() => {
+          if (!done) {
+            done = true;
+            resolve(null);
+          }
+        }, 5000);
+        geo.getCurrentPosition(
+          (pos) => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            const { latitude, longitude } = pos.coords || {};
+            if (
+              typeof latitude === "number" &&
+              typeof longitude === "number" &&
+              Number.isFinite(latitude) &&
+              Number.isFinite(longitude)
+            ) {
+              resolve({ lat: latitude, lon: longitude });
+            } else {
+              resolve(null);
+            }
+          },
+          () => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            resolve(null);
+          },
+          { enableHighAccuracy: false, timeout: 4500, maximumAge: 600000 },
+        );
+      });
+    };
+
+    const fetchWeather = async (coords?: { lat: number; lon: number }) => {
       setLoadingExtra((l) => ({ ...l, weather: true }));
       try {
-        const res = await fetch("/api/qweather");
+        const params = coords ? `?lat=${coords.lat}&lon=${coords.lon}` : "";
+        const res = await fetch(`/api/qweather${params}`);
         const json = await res.json();
         if (json.error) throw new Error(json.error);
-        setWeather({ ...json.now, updateTime: json.updateTime });
+        setWeather({
+          ...json.now,
+          updateTime: json.updateTime,
+          fxLink: json.fxLink,
+        });
       } catch (e) {
-        setErrorExtra((er) => ({ ...er, weather: e instanceof Error ? e.message : "天气获取失败" }));
+        setErrorExtra((er) => ({
+          ...er,
+          weather: e instanceof Error ? e.message : "天气获取失败",
+        }));
       } finally {
         setLoadingExtra((l) => ({ ...l, weather: false }));
       }
     };
+
     const fetchCalendar = async () => {
       setLoadingExtra((l) => ({ ...l, calendar: true }));
       try {
@@ -112,13 +185,20 @@ export default function ZhaomuPage() {
         if (json.error) throw new Error(json.error);
         setCalendar(json);
       } catch (e) {
-        setErrorExtra((er) => ({ ...er, calendar: e instanceof Error ? e.message : "万年历获取失败" }));
+        setErrorExtra((er) => ({
+          ...er,
+          calendar: e instanceof Error ? e.message : "万年历获取失败",
+        }));
       } finally {
         setLoadingExtra((l) => ({ ...l, calendar: false }));
       }
     };
-    fetchWeather();
-    fetchCalendar();
+
+    (async () => {
+      const coords = await getCoords().catch(() => null);
+      await fetchWeather(coords ?? undefined);
+      fetchCalendar();
+    })();
   }, []);
 
   const todayStr = new Date().toLocaleDateString("zh-CN", {
@@ -152,13 +232,39 @@ export default function ZhaomuPage() {
           ) : weather ? (
             <div className="text-sm space-y-1">
               <div>
-                温度：{weather.temp}℃，天气：{weather.text}
+                温度：{weather.temp}℃，体感：{weather.feelsLike}℃，天气：
+                {weather.text}
               </div>
               <div>
                 风向：{weather.windDir}，风力：{weather.windScale}级
+                {weather.windSpeed ? `，风速：${weather.windSpeed} km/h` : ""}
               </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                {weather.humidity && <div>湿度：{weather.humidity}%</div>}
+                {weather.pressure && <div>气压：{weather.pressure} hPa</div>}
+                {weather.precip && <div>降水：{weather.precip} mm</div>}
+                {weather.vis && <div>能见度：{weather.vis} km</div>}
+                {weather.cloud && <div>云量：{weather.cloud}%</div>}
+                {weather.dew && <div>露点：{weather.dew}℃</div>}
+              </div>
+              {weather.obsTime && (
+                <div className="opacity-60">观测：{weather.obsTime}</div>
+              )}
               {weather.updateTime && (
                 <div className="opacity-60">更新：{weather.updateTime}</div>
+              )}
+              {weather.fxLink && (
+                <div>
+                  <a
+                    href={weather.fxLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline underline-offset-4"
+                    aria-label="在和风天气查看详情"
+                  >
+                    在和风天气查看详情
+                  </a>
+                </div>
               )}
             </div>
           ) : (
@@ -170,7 +276,9 @@ export default function ZhaomuPage() {
         <div className="card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <span className="text-xl">📅</span>
-            <h2 className="text-base md:text-lg font-medium">今日万年历/节气</h2>
+            <h2 className="text-base md:text-lg font-medium">
+              今日万年历/节气
+            </h2>
           </div>
           {loadingExtra.calendar ? (
             <div className="card px-3 py-2 text-sm opacity-70">加载中...</div>
@@ -178,20 +286,129 @@ export default function ZhaomuPage() {
             <div className="card px-3 py-2 text-sm">{errorExtra.calendar}</div>
           ) : calendar ? (
             <div className="text-sm space-y-1">
-              {calendar.date && <div>日期：{calendar.date}（{calendar.week}）</div>}
-              {calendar.lunar && <div>农历：{calendar.lunar}</div>}
-              {calendar.zodiac && <div>生肖：{calendar.zodiac}</div>}
-              {calendar.cyclical && (
+              {calendar.date && (
                 <div>
-                  干支：{calendar.cyclical.year}年 {calendar.cyclical.month}月 {calendar.cyclical.day}日
+                  日期：{calendar.date}（{calendar.week}）
+                  {calendar.enWeek ? ` / ${calendar.enWeek}` : ""}
                 </div>
               )}
+              {(calendar.lunarText || calendar?.lunar) && (
+                <div>
+                  农历：
+                  {calendar.lunarText ||
+                    `${calendar?.lunar?.cnYear}年 ${calendar?.lunar?.cnMonth}${calendar?.lunar?.cnDay}`}{" "}
+                  {calendar?.lunar?.hour ? `（${calendar.lunar.hour}）` : ""}
+                </div>
+              )}
+              {calendar?.lunar?.zodiac && (
+                <div>生肖：{calendar?.lunar?.zodiac}</div>
+              )}
+              {calendar.astro && <div>星座：{calendar.astro}</div>}
+              {calendar.cyclical && (
+                <div>
+                  干支：{calendar.cyclical.year}年 {calendar.cyclical.month}月{" "}
+                  {calendar.cyclical.day}日
+                </div>
+              )}
+              {calendar.enMonth && <div>英文月份：{calendar.enMonth}</div>}
+              {typeof calendar?.dayInYear === "number" &&
+                typeof calendar?.weekInYear === "number" && (
+                  <div>
+                    本年第 {calendar.dayInYear} 天，第 {calendar.weekInYear} 周
+                    {calendar.julianDay
+                      ? `；儒略日：${calendar.julianDay}`
+                      : ""}
+                  </div>
+                )}
               {calendar.festivals && calendar.festivals.length > 0 && (
                 <div>节日：{calendar.festivals.join("、")}</div>
               )}
+              {calendar?.lunar && (
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  {calendar.lunar.yuexiang && (
+                    <div>月相：{calendar.lunar.yuexiang}</div>
+                  )}
+                  {calendar.lunar.wuhou && (
+                    <div>物候：{calendar.lunar.wuhou}</div>
+                  )}
+                  {calendar.lunar.shujiu && (
+                    <div>数九：{calendar.lunar.shujiu}</div>
+                  )}
+                  {calendar.lunar.sanfu && (
+                    <div>三伏：{calendar.lunar.sanfu}</div>
+                  )}
+                </div>
+              )}
               {calendar.almanac && (
-                <div>
-                  宜：{calendar.almanac.yi}；忌：{calendar.almanac.ji}
+                <div className="space-y-1">
+                  <div>
+                    宜：{calendar.almanac.yi}；忌：{calendar.almanac.ji}
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                    {calendar.almanac.chong && (
+                      <div>冲：{calendar.almanac.chong}</div>
+                    )}
+                    {calendar.almanac.sha && (
+                      <div>煞：{calendar.almanac.sha}</div>
+                    )}
+                    {calendar.almanac.nayin && (
+                      <div>纳音：{calendar.almanac.nayin}</div>
+                    )}
+                    {calendar.almanac.shiershen && (
+                      <div>十二神：{calendar.almanac.shiershen}</div>
+                    )}
+                    {calendar.almanac.xingxiu && (
+                      <div>星宿：{calendar.almanac.xingxiu}</div>
+                    )}
+                    {calendar.almanac.zheng && (
+                      <div>值日星：{calendar.almanac.zheng}</div>
+                    )}
+                    {calendar.almanac.shou && (
+                      <div>值日神：{calendar.almanac.shou}</div>
+                    )}
+                    {calendar.almanac.liuyao && (
+                      <div>六曜：{calendar.almanac.liuyao}</div>
+                    )}
+                    {calendar.almanac.jiuxing && (
+                      <div>九星：{calendar.almanac.jiuxing}</div>
+                    )}
+                    {calendar.almanac.taisui && (
+                      <div>太岁方位：{calendar.almanac.taisui}</div>
+                    )}
+                  </div>
+                  {calendar.almanac.jishenfangwei && (
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                      {calendar.almanac.jishenfangwei.xi && (
+                        <div>喜神：{calendar.almanac.jishenfangwei.xi}</div>
+                      )}
+                      {calendar.almanac.jishenfangwei.yanggui && (
+                        <div>
+                          阳贵：{calendar.almanac.jishenfangwei.yanggui}
+                        </div>
+                      )}
+                      {calendar.almanac.jishenfangwei.yingui && (
+                        <div>阴贵：{calendar.almanac.jishenfangwei.yingui}</div>
+                      )}
+                      {calendar.almanac.jishenfangwei.fu && (
+                        <div>福神：{calendar.almanac.jishenfangwei.fu}</div>
+                      )}
+                      {calendar.almanac.jishenfangwei.cai && (
+                        <div>财神：{calendar.almanac.jishenfangwei.cai}</div>
+                      )}
+                    </div>
+                  )}
+                  {Array.isArray(calendar.almanac.pengzubaiji) &&
+                    calendar.almanac.pengzubaiji.length > 0 && (
+                      <ul className="list-disc pl-5">
+                        {calendar.almanac.pengzubaiji.map(
+                          (t: string, idx: number) => (
+                            <li key={idx} className="opacity-80">
+                              {t}
+                            </li>
+                          ),
+                        )}
+                      </ul>
+                    )}
                 </div>
               )}
             </div>
@@ -296,3 +513,79 @@ export default function ZhaomuPage() {
     </div>
   );
 }
+
+// ...
+// 追加：万年历类型定义，避免使用 any
+type CalendarJishenFangwei = {
+  xi?: string;
+  yanggui?: string;
+  yingui?: string;
+  fu?: string;
+  cai?: string;
+};
+
+type CalendarAlmanac = {
+  yi?: string;
+  ji?: string;
+  chong?: string;
+  sha?: string;
+  nayin?: string;
+  shiershen?: string;
+  xingxiu?: string;
+  zheng?: string;
+  shou?: string;
+  liuyao?: string;
+  jiuxing?: string;
+  taisui?: string;
+  jishenfangwei?: CalendarJishenFangwei;
+  pengzubaiji?: string[];
+};
+
+type CalendarLunar = {
+  zodiac?: string;
+  year?: number;
+  month?: number;
+  day?: number;
+  cnYear?: string;
+  cnMonth?: string;
+  cnDay?: string;
+  cyclicalYear?: string;
+  cyclicalMonth?: string;
+  cyclicalDay?: string;
+  hour?: string;
+  maxDayInMonth?: number;
+  leapMonth?: number;
+  yuexiang?: string;
+  wuhou?: string;
+  shujiu?: string;
+  sanfu?: string;
+  solarTerms?: Record<string, string>;
+};
+
+type CalendarData = {
+  // 上游原始字段
+  year?: number;
+  leapYear?: boolean;
+  month?: number;
+  maxDayInMonth?: number;
+  enMonth?: string;
+  astro?: string;
+  cnWeek?: string;
+  enWeek?: string;
+  weekInYear?: number;
+  day?: number;
+  dayInYear?: number;
+  julianDay?: number;
+  hour?: number;
+  minute?: number;
+  second?: number;
+  festivals?: string[];
+  lunar?: CalendarLunar;
+  almanac?: CalendarAlmanac;
+  // 友好补充字段（由后端追加）
+  date?: string;
+  week?: string;
+  lunarText?: string;
+  cyclical?: { year?: string; month?: string; day?: string };
+  almanacSummary?: { yi?: string; ji?: string; chong?: string; sha?: string };
+};
