@@ -63,7 +63,7 @@ export default function Home() {
       <section className="card p-6 md:p-8">
         <div className="prose prose-sm md:prose prose-neutral dark:prose-invert mx-auto text-center max-w-[60ch]">
           <p className="leading-relaxed">
-            朝暮记 —— 用简单，记满朝朝暮暮不必复杂，不用长篇大论。在这里，1
+            朝暮记 —— 用简单，记满朝朝暮暮。不必复杂，不用长篇大论。在这里，1
             分钟就能记下清晨的阳光、傍晚的晚风，或是一天里的小情绪。
           </p>
           <p className="leading-relaxed">
