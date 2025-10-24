@@ -158,11 +158,6 @@ export default function TodosPage() {
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
               Todos
             </h1>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/" className="btn btn-outline">
-                返回首页
-              </Link>
-            </div>
             <TimeFilter value={timeFilter} onChange={setTimeFilter} />
           </section>
 

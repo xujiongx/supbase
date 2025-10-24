@@ -125,11 +125,6 @@ export default function NotesPage() {
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
               每日笔记
             </h1>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/" className="btn btn-outline">
-                返回首页
-              </Link>
-            </div>
           </section>
 
           {!isSupabaseConfigured ? (

@@ -82,9 +82,6 @@ export default function LoginPage() {
           {/* 顶部标题与快捷入口 */}
           <section className="space-y-4">
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">登录</h1>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/" className="btn btn-outline">返回首页</Link>
-            </div>
           </section>
           
           {banner && (<div className="card px-3 py-2 text-sm">{banner.text}</div>)}

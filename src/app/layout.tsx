@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Todos App",
-  description: "Next.js + Supabase",
+  title: "朝暮记",
+  description: "朝暮记，记录美好生活",
 };
 
 export default function RootLayout({
