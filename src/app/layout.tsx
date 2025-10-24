@@ -4,6 +4,7 @@ import "./globals.css";
 import TopNav from "../components/TopNav";
 import { Toaster } from "sonner";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}>
+        <Analytics />
         <Tooltip.Provider delayDuration={200}>
           {/* 全局顶部导航（右上角登录/退出），页面主体使用 children */}
           <header className="sticky top-0 z-50 w-full border-b border-subtle bg-background">
