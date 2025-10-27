@@ -3,6 +3,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSupabaseSession } from "@/lib/useSupabaseSession";
 import { getSupabase } from "@/lib/supabaseClient";
+import WeatherCard from "@/components/WeatherCard";
+import CalendarCard from "@/components/CalendarCard";
+import QRCode from "qrcode";
 
 type Todo = {
   id: number;
@@ -83,123 +86,9 @@ export default function ZhaomuPage() {
   const todosTotal = todosToday.length;
   const notesTotal = notesToday.length;
 
-  // 新增：天气与万年历数据状态
-  const [weather, setWeather] = useState<{
-    temp?: string;
-    feelsLike?: string;
-    text?: string;
-    windDir?: string;
-    windScale?: string;
-    windSpeed?: string;
-    humidity?: string;
-    precip?: string;
-    pressure?: string;
-    vis?: string;
-    cloud?: string;
-    dew?: string;
-    obsTime?: string;
-    updateTime?: string;
-    fxLink?: string;
-  } | null>(null);
-  const [calendar, setCalendar] = useState<CalendarData | null>(null);
-  const [loadingExtra, setLoadingExtra] = useState({
-    weather: false,
-    calendar: false,
-  });
-  const [errorExtra, setErrorExtra] = useState<{
-    weather?: string;
-    calendar?: string;
-  }>({});
+  // 使用独立组件替代内联状态
 
-  // 拉取天气与万年历（不依赖登录）
-  useEffect(() => {
-    const getCoords = (): Promise<{ lat: number; lon: number } | null> => {
-      return new Promise((resolve) => {
-        if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-          resolve(null);
-          return;
-        }
-        const geo = navigator.geolocation;
-        let done = false;
-        const timer = setTimeout(() => {
-          if (!done) {
-            done = true;
-            resolve(null);
-          }
-        }, 5000);
-        geo.getCurrentPosition(
-          (pos) => {
-            if (done) return;
-            done = true;
-            clearTimeout(timer);
-            const { latitude, longitude } = pos.coords || {};
-            if (
-              typeof latitude === "number" &&
-              typeof longitude === "number" &&
-              Number.isFinite(latitude) &&
-              Number.isFinite(longitude)
-            ) {
-              resolve({ lat: latitude, lon: longitude });
-            } else {
-              resolve(null);
-            }
-          },
-          () => {
-            if (done) return;
-            done = true;
-            clearTimeout(timer);
-            resolve(null);
-          },
-          { enableHighAccuracy: false, timeout: 4500, maximumAge: 600000 },
-        );
-      });
-    };
-
-    const fetchWeather = async (coords?: { lat: number; lon: number }) => {
-      setLoadingExtra((l) => ({ ...l, weather: true }));
-      try {
-        const params = coords ? `?lat=${coords.lat}&lon=${coords.lon}` : "";
-        const res = await fetch(`/api/qweather${params}`);
-        const json = await res.json();
-        if (json.error) throw new Error(json.error);
-        setWeather({
-          ...json.now,
-          updateTime: json.updateTime,
-          fxLink: json.fxLink,
-        });
-      } catch (e) {
-        setErrorExtra((er) => ({
-          ...er,
-          weather: e instanceof Error ? e.message : "天气获取失败",
-        }));
-      } finally {
-        setLoadingExtra((l) => ({ ...l, weather: false }));
-      }
-    };
-
-    const fetchCalendar = async () => {
-      setLoadingExtra((l) => ({ ...l, calendar: true }));
-      try {
-        const res = await fetch("/api/calendar");
-        const json = await res.json();
-        if (json.error) throw new Error(json.error);
-        setCalendar(json);
-      } catch (e) {
-        setErrorExtra((er) => ({
-          ...er,
-          calendar: e instanceof Error ? e.message : "万年历获取失败",
-        }));
-      } finally {
-        setLoadingExtra((l) => ({ ...l, calendar: false }));
-      }
-    };
-
-    (async () => {
-      const coords = await getCoords().catch(() => null);
-      await fetchWeather(coords ?? undefined);
-      fetchCalendar();
-    })();
-  }, []);
+  // 天气和日历数据已移至独立组件
 
   const todayStr = new Date().toLocaleDateString("zh-CN", {
     year: "numeric",
@@ -212,6 +101,9 @@ export default function ZhaomuPage() {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [shareGenerating, setShareGenerating] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
+
+  // 分享链接和二维码
+  const [shareUrl, setShareUrl] = useState<string>("");
 
   function wrapText(
     ctx: CanvasRenderingContext2D,
@@ -254,118 +146,167 @@ export default function ZhaomuPage() {
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("Canvas 不支持");
 
-      // 背景渐变
-      const grad = ctx.createLinearGradient(0, 0, 0, height);
-      grad.addColorStop(0, "#111827");
-      grad.addColorStop(1, "#1f2937");
-      ctx.fillStyle = grad;
+      // 深灰渐变背景（不那么黑、更耐看）
+      const bgGradient = ctx.createLinearGradient(0, 0, 0, height);
+      bgGradient.addColorStop(0, "#141414");
+      bgGradient.addColorStop(1, "#0f0f0f");
+      ctx.fillStyle = bgGradient;
       ctx.fillRect(0, 0, width, height);
 
-      // 标题
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 64px system-ui, -apple-system, Segoe UI, Roboto";
-      ctx.fillText("今朝·今日进度", 60, 120);
-
-      // 日期
-      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
-      ctx.fillStyle = "#93c5fd";
-      ctx.fillText(todayStr, 60, 175);
-
-      // 分割线
-      ctx.strokeStyle = "#374151";
-      ctx.lineWidth = 2;
+      // 白色细边框，保留安全区
+      ctx.globalAlpha = 1.0;
+      ctx.strokeStyle = "rgba(255,255,255,0.12)"
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(60, 200);
-      ctx.lineTo(width - 60, 200);
+      ctx.roundRect(36, 36, width - 72, height - 72, 16);
       ctx.stroke();
 
-      // 天气
-      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
-      ctx.fillStyle = "#ffffff";
-      const weatherTitleY = 270;
-      ctx.fillText("天气", 60, weatherTitleY);
-      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
-      const weatherText = weather
-        ? `${weather.text ?? "-"} ${weather.temp ?? "-"}℃ 体感 ${
-            weather.feelsLike ?? "-"
-          }℃ 风向 ${weather.windDir ?? "-"} 风力 ${weather.windScale ?? "-"}`
-        : "暂无天气信息";
-      wrapText(ctx, weatherText, 60, weatherTitleY + 48, width - 120, 44, 2);
+      // 统一安全边距
+      const margin = 120;
 
-      // 万年历
-      const calBaseY = weatherTitleY + 150;
-      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
+      // 头部：左侧标题，右侧日期（白字）
       ctx.fillStyle = "#ffffff";
-      ctx.fillText("万年历", 60, calBaseY);
-      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
-      const lunarLine = calendar?.lunarText
-        ? `农历：${calendar.lunarText}`
-        : calendar?.lunar
-        ? `农历：${calendar.lunar?.cnYear ?? ""}年 ${
-            calendar.lunar?.cnMonth ?? ""
-          }${calendar.lunar?.cnDay ?? ""}`
-        : "农历：-";
-      wrapText(ctx, lunarLine, 60, calBaseY + 48, width - 120, 44, 2);
-      if (calendar?.cyclical) {
-        const cyc = `干支：${calendar.cyclical.year ?? "-"}年 ${
-          calendar.cyclical.month ?? "-"
-        }月 ${calendar.cyclical.day ?? "-"}日`;
-        wrapText(ctx, cyc, 60, calBaseY + 96, width - 120, 44, 1);
-      }
-      if (calendar?.almanacSummary) {
-        const summ = `宜：${calendar.almanacSummary.yi ?? "-"}；忌：${
-          calendar.almanacSummary.ji ?? "-"
-        }`;
-        wrapText(ctx, summ, 60, calBaseY + 144, width - 120, 44, 2);
-      }
+      ctx.textAlign = "left";
+      ctx.font = "600 72px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillText("今朝·今日进度", margin, margin + 40);
+
+      const dateTopStr = new Date().toLocaleDateString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "long",
+      });
+      ctx.textAlign = "right";
+      ctx.font = "500 32px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillText(dateTopStr, width - margin, margin + 40);
+
+      // 头部与内容分隔线（白色低透明）
+      ctx.textAlign = "left";
+      ctx.strokeStyle = "rgba(255,255,255,0.15)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(margin, margin + 100);
+      ctx.lineTo(width - margin, margin + 100);
+      ctx.stroke();
+
+      // 内容区域
+      const contentX = margin;
+      let contentY = margin + 180;
+      const contentWidth = width - margin * 2;
+      const lineHeight = 72;
 
       // 待办
-      const todosBaseY = calBaseY + 240;
-      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
       ctx.fillStyle = "#ffffff";
-      ctx.fillText("待办", 60, todosBaseY);
-      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
-      const todosLine = `完成 ${todosCompleted}/${todosTotal}`;
-      ctx.fillText(todosLine, 60, todosBaseY + 48);
-      const listTodos = todosToday.slice(0, 5);
-      ctx.font = "400 30px system-ui, -apple-system, Segoe UI, Roboto";
-      let yTodo = todosBaseY + 92;
-      listTodos.forEach((t) => {
-        const prefix = t.is_complete ? "✅ " : "• ";
-        wrapText(ctx, prefix + t.title, 60, yTodo, width - 120, 42, 2);
-        yTodo += 60;
-      });
-      if (listTodos.length === 0) {
-        ctx.fillStyle = "#9ca3af";
-        ctx.fillText("今天还没有待办", 60, yTodo);
-        ctx.fillStyle = "#ffffff";
+      ctx.font = "600 64px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillText("待办", contentX, contentY);
+      contentY += lineHeight;
+
+      ctx.font = "500 48px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillText(`完成 ${todosCompleted}/${todosTotal}`, contentX, contentY);
+      contentY += Math.round(lineHeight * 0.9);
+
+      // 待办列表
+      ctx.font = "500 44px system-ui, -apple-system, Segoe UI, Roboto";
+      const todoTextX = contentX + 40;
+      const todoLineStep = 64;
+      if (todosToday.length > 0) {
+        const maxTodoItems = 4;
+        todosToday.slice(0, maxTodoItems).forEach((t) => {
+          ctx.globalAlpha = t.is_complete ? 0.55 : 1;
+          ctx.fillText(t.is_complete ? "✓" : "•", contentX, contentY);
+          wrapText(
+            ctx,
+            t.title,
+            todoTextX,
+            contentY,
+            contentWidth - 60,
+            todoLineStep,
+            1,
+          );
+          ctx.globalAlpha = 1;
+          contentY += todoLineStep;
+        });
+      } else {
+        ctx.globalAlpha = 0.7;
+        ctx.fillText("今天还没有待办", contentX, contentY);
+        ctx.globalAlpha = 1;
+        contentY += todoLineStep;
       }
+
+      contentY += lineHeight;
 
       // 笔记
-      const notesBaseY = todosBaseY + 420;
-      ctx.font = "500 36px system-ui, -apple-system, Segoe UI, Roboto";
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText("笔记", 60, notesBaseY);
-      ctx.font = "400 32px system-ui, -apple-system, Segoe UI, Roboto";
-      const notesLine = `新增 ${notesTotal} 条`;
-      ctx.fillText(notesLine, 60, notesBaseY + 48);
-      const listNotes = notesToday.slice(0, 3);
-      ctx.font = "400 30px system-ui, -apple-system, Segoe UI, Roboto";
-      let yNote = notesBaseY + 92;
-      listNotes.forEach((n) => {
-        wrapText(ctx, "• " + n.content, 60, yNote, width - 120, 42, 2);
-        yNote += 60;
-      });
-      if (listNotes.length === 0) {
-        ctx.fillStyle = "#9ca3af";
-        ctx.fillText("今天还没有笔记", 60, yNote);
-        ctx.fillStyle = "#ffffff";
+      ctx.font = "600 64px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillText("笔记", contentX, contentY);
+      contentY += lineHeight;
+
+      ctx.font = "500 48px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillText(`新增 ${notesTotal} 条`, contentX, contentY);
+      contentY += Math.round(lineHeight * 0.9);
+
+      ctx.font = "500 44px system-ui, -apple-system, Segoe UI, Roboto";
+      const noteTextX = contentX + 40;
+      const noteLineStep = 64;
+      if (notesToday.length > 0) {
+        const maxNoteItems = 3;
+        notesToday.slice(0, maxNoteItems).forEach((n) => {
+          ctx.fillText("•", contentX, contentY);
+          wrapText(
+            ctx,
+            n.content,
+            noteTextX,
+            contentY,
+            contentWidth - 60,
+            noteLineStep,
+            1,
+          );
+          contentY += noteLineStep;
+        });
+      } else {
+        ctx.globalAlpha = 0.7;
+        ctx.fillText("今天还没有笔记", contentX, contentY);
+        ctx.globalAlpha = 1;
+        contentY += noteLineStep;
       }
 
-      // 署名
-      ctx.font = "400 28px system-ui, -apple-system, Segoe UI, Roboto";
-      ctx.fillStyle = "#9ca3af";
-      ctx.fillText("由 朝暮记 生成", 60, height - 60);
+      // 分享链接
+      const shareLink = window.location.href;
+      setShareUrl(shareLink);
+
+      // 二维码与签名位置修正：统一按边距锚定
+      const qrSize = 180;
+      const qrX = width - margin - qrSize;
+      const qrY = height - margin - qrSize;
+
+      try {
+        const qrCodeUrl = await QRCode.toDataURL(shareLink, {
+          width: qrSize,
+          margin: 1,
+          color: { dark: "#ffffff", light: "#000000" },
+        });
+        const qrImage = new Image();
+        await new Promise((resolve, reject) => {
+          qrImage.onload = resolve;
+          qrImage.onerror = reject;
+          qrImage.src = qrCodeUrl;
+        });
+        ctx.drawImage(qrImage, qrX, qrY, qrSize, qrSize);
+
+        // 标签置于二维码上方，避免触底
+        ctx.font = "500 24px system-ui, -apple-system, Segoe UI, Roboto";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.fillText("扫码访问", qrX + qrSize / 2, qrY - 16);
+        ctx.textAlign = "left";
+      } catch (qrError) {
+        console.error("二维码生成失败", qrError);
+      }
+
+      // 签名固定左下角
+      ctx.textAlign = "left";
+      ctx.font = "600 28px system-ui, -apple-system, Segoe UI, Roboto";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("由 朝暮记 生成", margin, height - margin);
 
       const url = canvas.toDataURL("image/png");
       setShareImageUrl(url);
@@ -389,9 +330,26 @@ export default function ZhaomuPage() {
     const res = await fetch(shareImageUrl);
     const blob = await res.blob();
     try {
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob }),
+      ]);
     } catch (e) {
       setShareError("复制到剪贴板失败，请尝试下载后手动分享");
+    }
+  }
+
+  async function copyShareUrlToClipboard() {
+    if (!shareUrl || !("clipboard" in navigator)) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      // 显示成功消息
+      setShareError(null);
+      alert("已复制链接到剪贴板");
+    } catch (e) {
+      // 显示错误消息
+      setShareError(
+        "复制链接失败：" + (e instanceof Error ? e.message : "未知错误"),
+      );
     }
   }
 
@@ -399,9 +357,13 @@ export default function ZhaomuPage() {
     if (!shareImageUrl || !("share" in navigator)) return;
     const res = await fetch(shareImageUrl);
     const blob = await res.blob();
-    const file = new File([blob], `今朝进度_${new Date().toISOString().slice(0, 10)}.png`, {
-      type: "image/png",
-    });
+    const file = new File(
+      [blob],
+      `今朝进度_${new Date().toISOString().slice(0, 10)}.png`,
+      {
+        type: "image/png",
+      },
+    );
     if (navigator.canShare && !navigator.canShare({ files: [file] })) {
       setShareError("当前设备不支持图片分享，请下载图片后手动分享");
       return;
@@ -425,202 +387,10 @@ export default function ZhaomuPage() {
       {/* 顶部：天气与万年历（对所有用户可见） */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         {/* 今日天气 */}
-        <div className="card p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">☀️</span>
-            <h2 className="text-base md:text-lg font-medium">今日天气</h2>
-          </div>
-          {loadingExtra.weather ? (
-            <div className="card px-3 py-2 text-sm opacity-70">加载中...</div>
-          ) : errorExtra.weather ? (
-            <div className="card px-3 py-2 text-sm">{errorExtra.weather}</div>
-          ) : weather ? (
-            <div className="text-sm space-y-1">
-              <div>
-                温度：{weather.temp}℃，体感：{weather.feelsLike}℃，天气：
-                {weather.text}
-              </div>
-              <div>
-                风向：{weather.windDir}，风力：{weather.windScale}级
-                {weather.windSpeed ? `，风速：${weather.windSpeed} km/h` : ""}
-              </div>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                {weather.humidity && <div>湿度：{weather.humidity}%</div>}
-                {weather.pressure && <div>气压：{weather.pressure} hPa</div>}
-                {weather.precip && <div>降水：{weather.precip} mm</div>}
-                {weather.vis && <div>能见度：{weather.vis} km</div>}
-                {weather.cloud && <div>云量：{weather.cloud}%</div>}
-                {weather.dew && <div>露点：{weather.dew}℃</div>}
-              </div>
-              {weather.obsTime && (
-                <div className="opacity-60">观测：{weather.obsTime}</div>
-              )}
-              {weather.updateTime && (
-                <div className="opacity-60">更新：{weather.updateTime}</div>
-              )}
-              {weather.fxLink && (
-                <div>
-                  <a
-                    href={weather.fxLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary underline underline-offset-4"
-                    aria-label="在和风天气查看详情"
-                  >
-                    在和风天气查看详情
-                  </a>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm opacity-60">暂无天气信息</div>
-          )}
-        </div>
+        <WeatherCard />
 
         {/* 今日万年历/节气 */}
-        <div className="card p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">📅</span>
-            <h2 className="text-base md:text-lg font-medium">
-              今日万年历/节气
-            </h2>
-          </div>
-          {loadingExtra.calendar ? (
-            <div className="card px-3 py-2 text-sm opacity-70">加载中...</div>
-          ) : errorExtra.calendar ? (
-            <div className="card px-3 py-2 text-sm">{errorExtra.calendar}</div>
-          ) : calendar ? (
-            <div className="text-sm space-y-1">
-              {calendar.date && (
-                <div>
-                  日期：{calendar.date}（{calendar.week}）
-                  {calendar.enWeek ? ` / ${calendar.enWeek}` : ""}
-                </div>
-              )}
-              {(calendar.lunarText || calendar?.lunar) && (
-                <div>
-                  农历：
-                  {calendar.lunarText ||
-                    `${calendar?.lunar?.cnYear}年 ${calendar?.lunar?.cnMonth}${calendar?.lunar?.cnDay}`} {" "}
-                  {calendar?.lunar?.hour ? `（${calendar.lunar.hour}）` : ""}
-                </div>
-              )}
-              {calendar?.lunar?.zodiac && (
-                <div>生肖：{calendar?.lunar?.zodiac}</div>
-              )}
-              {calendar.astro && <div>星座：{calendar.astro}</div>}
-              {calendar.cyclical && (
-                <div>
-                  干支：{calendar.cyclical.year}年 {calendar.cyclical.month}月 {" "}
-                  {calendar.cyclical.day}日
-                </div>
-              )}
-              {calendar.enMonth && <div>英文月份：{calendar.enMonth}</div>}
-              {typeof calendar?.dayInYear === "number" &&
-                typeof calendar?.weekInYear === "number" && (
-                  <div>
-                    本年第 {calendar.dayInYear} 天，第 {calendar.weekInYear} 周
-                    {calendar.julianDay
-                      ? `；儒略日：${calendar.julianDay}`
-                      : ""}
-                  </div>
-                )}
-              {calendar.festivals && calendar.festivals.length > 0 && (
-                <div>节日：{calendar.festivals.join("、")}</div>
-              )}
-              {calendar?.lunar && (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  {calendar.lunar.yuexiang && (
-                    <div>月相：{calendar.lunar.yuexiang}</div>
-                  )}
-                  {calendar.lunar.wuhou && (
-                    <div>物候：{calendar.lunar.wuhou}</div>
-                  )}
-                  {calendar.lunar.shujiu && (
-                    <div>数九：{calendar.lunar.shujiu}</div>
-                  )}
-                  {calendar.lunar.sanfu && (
-                    <div>三伏：{calendar.lunar.sanfu}</div>
-                  )}
-                </div>
-              )}
-              {calendar.almanac && (
-                <div className="space-y-1">
-                  <div>
-                    宜：{calendar.almanac.yi}；忌：{calendar.almanac.ji}
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                    {calendar.almanac.chong && (
-                      <div>冲：{calendar.almanac.chong}</div>
-                    )}
-                    {calendar.almanac.sha && (
-                      <div>煞：{calendar.almanac.sha}</div>
-                    )}
-                    {calendar.almanac.nayin && (
-                      <div>纳音：{calendar.almanac.nayin}</div>
-                    )}
-                    {calendar.almanac.shiershen && (
-                      <div>十二神：{calendar.almanac.shiershen}</div>
-                    )}
-                    {calendar.almanac.xingxiu && (
-                      <div>星宿：{calendar.almanac.xingxiu}</div>
-                    )}
-                    {calendar.almanac.zheng && (
-                      <div>值日星：{calendar.almanac.zheng}</div>
-                    )}
-                    {calendar.almanac.shou && (
-                      <div>值日神：{calendar.almanac.shou}</div>
-                    )}
-                    {calendar.almanac.liuyao && (
-                      <div>六曜：{calendar.almanac.liuyao}</div>
-                    )}
-                    {calendar.almanac.jiuxing && (
-                      <div>九星：{calendar.almanac.jiuxing}</div>
-                    )}
-                    {calendar.almanac.taisui && (
-                      <div>太岁方位：{calendar.almanac.taisui}</div>
-                    )}
-                  </div>
-                  {calendar.almanac.jishenfangwei && (
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                      {calendar.almanac.jishenfangwei.xi && (
-                        <div>喜神：{calendar.almanac.jishenfangwei.xi}</div>
-                      )}
-                      {calendar.almanac.jishenfangwei.yanggui && (
-                        <div>
-                          阳贵：{calendar.almanac.jishenfangwei.yanggui}
-                        </div>
-                      )}
-                      {calendar.almanac.jishenfangwei.yingui && (
-                        <div>阴贵：{calendar.almanac.jishenfangwei.yingui}</div>
-                      )}
-                      {calendar.almanac.jishenfangwei.fu && (
-                        <div>福神：{calendar.almanac.jishenfangwei.fu}</div>
-                      )}
-                      {calendar.almanac.jishenfangwei.cai && (
-                        <div>财神：{calendar.almanac.jishenfangwei.cai}</div>
-                      )}
-                    </div>
-                  )}
-                  {Array.isArray(calendar.almanac.pengzubaiji) &&
-                    calendar.almanac.pengzubaiji.length > 0 && (
-                      <ul className="list-disc pl-5">
-                        {calendar.almanac.pengzubaiji.map(
-                          (t: string, idx: number) => (
-                            <li key={idx} className="opacity-80">
-                              {t}
-                            </li>
-                          ),
-                        )}
-                      </ul>
-                    )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-sm opacity-60">暂无万年历信息</div>
-          )}
-        </div>
+        <CalendarCard />
       </section>
 
       {/* 配置或登录状态 */}
@@ -743,11 +513,24 @@ export default function ZhaomuPage() {
         )}
         {shareImageUrl ? (
           <div className="space-y-3">
-            <img
-              src={shareImageUrl}
-              alt="今日进度分享图片预览"
-              className="w-full max-w-xl rounded-md border"
-            />
+            <div className="flex flex-col gap-4">
+              <img
+                src={shareImageUrl}
+                alt="今日进度分享图片预览"
+                className="w-full max-w-xl rounded-md border"
+              />
+              {shareUrl && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-gray-600">分享链接：{shareUrl}</p>
+                  <button
+                    onClick={copyShareUrlToClipboard}
+                    className="btn btn-sm btn-outline w-fit"
+                  >
+                    复制链接
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={copyShareImageToClipboard}
@@ -755,11 +538,11 @@ export default function ZhaomuPage() {
               >
                 复制到剪贴板
               </button>
-              <button
-                onClick={systemShareImage}
-                className="btn btn-outline"
-              >
+              <button onClick={systemShareImage} className="btn btn-outline">
                 通过系统分享
+              </button>
+              <button onClick={downloadShareImage} className="btn btn-outline">
+                下载图片
               </button>
             </div>
           </div>
@@ -769,82 +552,6 @@ export default function ZhaomuPage() {
           </div>
         )}
       </section>
-
-      {/* 天气与万年历：已移至顶部展示 */}
     </div>
   );
 }
-
-// ...
-// 追加：万年历类型定义，避免使用 any
-type CalendarJishenFangwei = {
-  xi?: string;
-  yanggui?: string;
-  yingui?: string;
-  fu?: string;
-  cai?: string;
-};
-
-type CalendarAlmanac = {
-  yi?: string;
-  ji?: string;
-  chong?: string;
-  sha?: string;
-  nayin?: string;
-  shiershen?: string;
-  xingxiu?: string;
-  zheng?: string;
-  shou?: string;
-  liuyao?: string;
-  jiuxing?: string;
-  taisui?: string;
-  jishenfangwei?: CalendarJishenFangwei;
-  pengzubaiji?: string[];
-};
-
-type CalendarLunar = {
-  zodiac?: string;
-  year?: number;
-  month?: number;
-  day?: number;
-  cnYear?: string;
-  cnMonth?: string;
-  cnDay?: string;
-  cyclicalYear?: string;
-  cyclicalMonth?: string;
-  cyclicalDay?: string;
-  hour?: string;
-  maxDayInMonth?: number;
-  leapMonth?: number;
-  yuexiang?: string;
-  wuhou?: string;
-  shujiu?: string;
-  sanfu?: string;
-  solarTerms?: Record<string, string>;
-};
-
-type CalendarData = {
-  year?: number;
-  leapYear?: boolean;
-  month?: number;
-  maxDayInMonth?: number;
-  enMonth?: string;
-  astro?: string;
-  cnWeek?: string;
-  enWeek?: string;
-  weekInYear?: number;
-  day?: number;
-  dayInYear?: number;
-  julianDay?: number;
-  hour?: number;
-  minute?: number;
-  second?: number;
-  festivals?: string[];
-  lunar?: CalendarLunar;
-  almanac?: CalendarAlmanac;
-  date?: string;
-  week?: string;
-  lunarText?: string;
-  cyclical?: { year?: string; month?: string; day?: string };
-  almanacSummary?: { yi?: string; ji?: string; chong?: string; sha?: string };
-};

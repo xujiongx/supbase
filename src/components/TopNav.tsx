@@ -144,7 +144,7 @@ export default function TopNav() {
                 : "opacity-80 hover:opacity-100 hover:underline"
             }
           >
-            每日代办
+            每日待办
           </Link>
           <Link
             href="/notes"
