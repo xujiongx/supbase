@@ -110,10 +110,10 @@ export default function CalendarCard({ onCalendarChange }: CalendarCardProps) {
   }, []);
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card card-interactive space-y-4 p-4 md:p-5">
       <div className="flex items-center gap-2">
         <span className="text-xl">📅</span>
-        <h2 className="text-base md:text-lg font-medium">
+        <h2 className="text-base font-semibold tracking-tight md:text-lg">
           今日万年历/节气
         </h2>
       </div>

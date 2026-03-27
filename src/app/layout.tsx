@@ -26,17 +26,19 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="zh-CN">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-dvh flex-col`}>
         <Analytics />
         <Tooltip.Provider delayDuration={200}>
           {/* 全局顶部导航（右上角登录/退出），页面主体使用 children */}
-          <header className="sticky top-0 z-50 w-full border-b border-subtle bg-background">
-            <div className="mx-auto max-w-7xl px-4 py-3">
+          <header className="sticky top-0 z-50 w-full border-b border-subtle bg-background/85 backdrop-blur-md backdrop-saturate-150 transition-[background] duration-200">
+            <div className="mx-auto max-w-7xl px-3 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:py-3 sm:pt-3">
               <TopNav />
             </div>
           </header>
-          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
-          <Toaster richColors position="top-right" />
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 md:py-10">
+            {children}
+          </main>
+          <Toaster richColors={false} position="top-right" closeButton offset={16} />
         </Tooltip.Provider>
       </body>
     </html>

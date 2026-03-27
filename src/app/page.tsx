@@ -1,74 +1,97 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import { CheckSquare, FileText, Contrast, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="font-sans max-w-3xl md:max-w-4xl mx-auto px-4 space-y-12">
-      {/* Hero 区域 */}
-      <section className="space-y-6 text-center">
-        <Image
-          src="/logo.png"
-          alt="朝暮记 Logo"
-          width={96}
-          height={96}
-          priority
-          className="mx-auto block h-20 w-20 md:h-24 md:w-24 rounded-full object-cover"
-        />
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
-          朝暮记
-        </h1>
-        <p className="text-sm md:text-base opacity-70">
-          用简单，记录朝朝暮暮。
-        </p>
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/notes" className="btn btn-outline">
-            开始记事
-          </Link>
-          <Link href="/todos" className="btn btn-outline">
-            管理待办
-          </Link>
+    <div className="page-shell font-sans space-y-14 md:space-y-16">
+      <section className="space-y-8 text-center">
+        <div className="mx-auto transition-transform duration-500 ease-out hover:scale-[1.02]">
+          <Image
+            src="/logo.png"
+            alt="朝暮记 Logo"
+            width={96}
+            height={96}
+            priority
+            className="mx-auto block h-20 w-20 rounded-full object-cover ring-1 ring-[var(--color-border)] md:h-24 md:w-24"
+          />
         </div>
-
-        {/* 用户状态与操作已移至顶部导航，首页保持极简风格 */}
+        <div className="space-y-4">
+          <h1 className="page-title">朝暮记</h1>
+          <p className="mx-auto max-w-md text-sm text-muted-foreground md:text-base">
+            用简单，记录朝朝暮暮。
+          </p>
+          <div className="flex flex-wrap justify-center gap-3 pt-2">
+            <Link href="/notes" className="btn btn-outline gap-1.5">
+              开始记事
+              <ArrowRight className="h-4 w-4 opacity-70" aria-hidden />
+            </Link>
+            <Link href="/todos" className="btn btn-primary gap-1.5">
+              管理待办
+              <ArrowRight className="h-4 w-4 opacity-80" aria-hidden />
+            </Link>
+          </div>
+        </div>
       </section>
 
-      {/* 今日概览引导卡片 */}
-      <section className="card p-4 space-y-3">
-        <h2 className="text-base md:text-lg font-medium">今朝概览</h2>
-        <p className="text-sm opacity-70">查看今日待办与笔记摘要。</p>
+      <section className="card card-interactive space-y-4 p-5 md:p-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <h2 className="text-base font-semibold tracking-tight md:text-lg">
+            今朝概览
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            查看今日待办与笔记摘要
+          </p>
+        </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/zhaomu" className="btn btn-primary">前往今朝</Link>
-          <Link href="/discover" className="btn btn-outline">去发现</Link>
+          <Link href="/zhaomu" className="btn btn-primary">
+            前往今朝
+          </Link>
+          <Link href="/discover" className="btn btn-outline">
+            去发现
+          </Link>
         </div>
       </section>
 
-      {/* 特性栅格 */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-        <div className="card p-4 space-y-2">
-          <h3 className="font-medium">✅ 待办列表</h3>
-          <p className="text-sm opacity-70">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5">
+        <div className="card card-interactive space-y-3 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]">
+              <CheckSquare className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            </span>
+            <h3 className="font-medium tracking-tight">待办列表</h3>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
             创建、勾选与删除，专注当下，清晰掌控任务。
           </p>
         </div>
-        <div className="card p-4 space-y-2">
-          <h3 className="font-medium">📝 每日笔记</h3>
-          <p className="text-sm opacity-70">
+        <div className="card card-interactive space-y-3 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]">
+              <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            </span>
+            <h3 className="font-medium tracking-tight">每日笔记</h3>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
             记录灵感与思考，支持 Markdown 与主题适配。
           </p>
         </div>
-        <div className="card p-4 space-y-2">
-          <h3 className="font-medium">🌗 黑白主题</h3>
-          <p className="text-sm opacity-70">
-            适配系统浅色与深色主题，夜间不刺眼。
+        <div className="card card-interactive space-y-3 p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]">
+              <Contrast className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+            </span>
+            <h3 className="font-medium tracking-tight">深浅主题</h3>
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            适配系统浅色与深色，夜间不刺眼。
           </p>
         </div>
       </section>
 
-      {/* 品牌介绍 */}
-
       <section className="card p-6 md:p-8">
-        <div className="prose prose-sm md:prose prose-neutral dark:prose-invert mx-auto text-center max-w-[60ch]">
+        <div className="prose prose-sm md:prose prose-neutral dark:prose-invert mx-auto max-w-[60ch] text-center">
           <p className="leading-relaxed">
             朝暮记 —— 用简单，记满朝朝暮暮。不必复杂，不用长篇大论。在这里，1
             分钟就能记下清晨的阳光、傍晚的晚风，或是一天里的小情绪。

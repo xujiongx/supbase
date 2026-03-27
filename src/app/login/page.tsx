@@ -176,43 +176,57 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="font-sans">
+    <div className="page-shell font-sans">
       <Tooltip.Provider delayDuration={200}>
-        <main className="space-y-8">
-          {/* 顶部标题与快捷入口 */}
-          <section className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-              登录
-            </h1>
-          </section>
+        <main className="mx-auto max-w-lg space-y-8 md:space-y-10">
+          <header className="space-y-2">
+            <h1 className="page-title">登录</h1>
+            <p className="page-lede">
+              使用邮箱验证码或魔法链接，无密码即可进入朝暮记。
+            </p>
+          </header>
 
           {banner && (
-            <div className="card px-3 py-2 text-sm">{banner.text}</div>
+            <div
+              role="status"
+              className={`banner ${
+                banner.type === "success" ? "banner-success" : "banner-error"
+              }`}
+            >
+              {banner.text}
+            </div>
           )}
 
           {session ? (
-            <div className="card flex items-center justify-between px-3 py-2">
-              <span className="text-sm opacity-80">
+            <div className="card card-interactive flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <span className="text-sm text-muted-foreground">
                 已登录：{session.user.email || session.user.id}
               </span>
-              <button onClick={signOut} className="btn btn-outline text-sm">
+              <button onClick={signOut} className="btn btn-outline shrink-0">
                 退出登录
               </button>
             </div>
           ) : (
             <>
-              {/* 魔法链接登录 */}
-              <div className="card p-3 space-y-3">
-                <div className="flex w-full gap-2">
+              <div className="card space-y-4 p-5 md:p-6">
+                <div>
+                  <h2 className="text-sm font-medium tracking-tight">
+                    魔法链接
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    邮件内点击链接即可完成登录。
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") sendMagicLink();
                     }}
-                    placeholder="输入邮箱以登录（魔法链接）"
+                    placeholder="邮箱地址"
                     className="input flex-1"
-                    aria-label="邮箱"
+                    aria-label="邮箱（魔法链接）"
                     type="email"
                   />
                   <Tooltip.Root>
@@ -220,72 +234,83 @@ export default function LoginPage() {
                       <button
                         onClick={sendMagicLink}
                         disabled={loading || !isValidEmail(email.trim())}
-                        className="btn btn-primary"
+                        className="btn btn-primary sm:w-auto sm:shrink-0"
                       >
-                        {loading ? "发送中..." : "发送登录链接"}
+                        {loading ? "发送中…" : "发送链接"}
                       </button>
                     </Tooltip.Trigger>
                     <Tooltip.Content
-                      className="card px-2 py-1 text-xs"
+                      className="tooltip-content z-50"
                       sideOffset={6}
                     >
-                      我们会给你的邮箱发送登录链接
-                      <Tooltip.Arrow className="opacity-40" />
+                      我们会向该邮箱发送登录链接
+                      <Tooltip.Arrow className="fill-[var(--color-border)]" />
                     </Tooltip.Content>
                   </Tooltip.Root>
                 </div>
-                <p className="text-xs opacity-60">使用魔法链接登录，无需密码。</p>
               </div>
 
-              {/* 邮箱验证码登录 */}
-              <div className="card p-3 space-y-3">
-                <div className="flex w-full gap-2">
+              <div className="card space-y-4 p-5 md:p-6">
+                <div>
+                  <h2 className="text-sm font-medium tracking-tight">
+                    邮箱验证码
+                  </h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    查收邮件，输入 6 位数字完成验证。
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") sendEmailOtp();
                     }}
-                    placeholder="输入邮箱以登录（验证码）"
+                    placeholder="邮箱地址"
                     className="input flex-1"
-                    aria-label="邮箱"
+                    aria-label="邮箱（验证码）"
                     type="email"
                   />
                   <button
                     onClick={sendEmailOtp}
                     disabled={
-                      otpSending || !isValidEmail(email.trim()) || otpCooldown > 0
+                      otpSending ||
+                      !isValidEmail(email.trim()) ||
+                      otpCooldown > 0
                     }
-                    className="btn btn-primary"
+                    className="btn btn-primary sm:w-auto sm:shrink-0"
                   >
                     {otpSending
-                      ? "发送中..."
+                      ? "发送中…"
                       : otpCooldown > 0
-                      ? `重新发送(${otpCooldown}s)`
-                      : "发送验证码"}
+                        ? `重新发送（${otpCooldown}s）`
+                        : "发送验证码"}
                   </button>
                 </div>
-                <div className="flex w-full gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
                   <input
                     value={otpToken}
                     onChange={(e) => setOtpToken(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") verifyEmailOtp();
                     }}
-                    placeholder="输入 6 位验证码"
-                    className="input flex-1"
+                    placeholder="6 位验证码"
+                    className="input flex-1 tracking-widest"
                     aria-label="验证码"
                     inputMode="numeric"
                     pattern="[0-9]*"
+                    maxLength={8}
                   />
                   <button
                     onClick={verifyEmailOtp}
                     disabled={
-                      otpVerifying || !isValidEmail(email.trim()) || !otpToken.trim()
+                      otpVerifying ||
+                      !isValidEmail(email.trim()) ||
+                      !otpToken.trim()
                     }
-                    className="btn btn-outline"
+                    className="btn btn-outline sm:w-auto sm:shrink-0"
                   >
-                    {otpVerifying ? "验证中..." : "验证登录"}
+                    {otpVerifying ? "验证中…" : "验证登录"}
                   </button>
                 </div>
               </div>

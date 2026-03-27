@@ -376,16 +376,13 @@ export default function ZhaomuPage() {
   }
 
   return (
-    <div className="font-sans space-y-8">
-      <section className="space-y-1">
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-          今朝
-        </h1>
-        <p className="text-sm opacity-70">当天信息 · {todayStr}</p>
-      </section>
+    <div className="page-shell font-sans space-y-8 md:space-y-10">
+      <header className="space-y-2">
+        <h1 className="page-title">今朝</h1>
+        <p className="page-lede max-w-none">当天信息 · {todayStr}</p>
+      </header>
 
-      {/* 顶部：天气与万年历（对所有用户可见） */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
         {/* 今日天气 */}
         <WeatherCard />
 
@@ -395,22 +392,25 @@ export default function ZhaomuPage() {
 
       {/* 配置或登录状态 */}
       {!session ? (
-        <div className="card p-4 text-sm opacity-80">
+        <div className="card card-interactive p-5 text-sm text-muted-foreground">
           请先登录以查看你的当天数据。
-          <Link href="/login" className="ml-1 underline underline-offset-4">
+          <Link href="/login" className="link-inline ml-1">
             立即登录
           </Link>
         </div>
       ) : (
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          {/* 今日概览：待办 */}
-          <div className="card p-4 space-y-3">
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+          <div className="card card-interactive space-y-4 p-4 md:p-5">
             <div className="flex items-center gap-2">
               <span className="text-xl">✅</span>
-              <h2 className="text-base md:text-lg font-medium">今日待办</h2>
+              <h2 className="text-base font-semibold tracking-tight md:text-lg">
+                今日待办
+              </h2>
             </div>
             {loading.todos ? (
-              <div className="card px-3 py-2 text-sm opacity-70">加载中...</div>
+              <div className="rounded-md border border-dashed border-subtle px-3 py-4 text-sm text-muted-foreground">
+                加载中…
+              </div>
             ) : error.todos ? (
               <div className="card px-3 py-2 text-sm">{error.todos}</div>
             ) : (
@@ -435,10 +435,7 @@ export default function ZhaomuPage() {
                 ) : (
                   <div className="text-sm opacity-60">今天还没有待办</div>
                 )}
-                <Link
-                  href="/todos"
-                  className="text-sm text-primary underline underline-offset-4"
-                >
+                <Link href="/todos" className="link-inline text-sm">
                   去管理今日待办
                 </Link>
               </div>
@@ -446,10 +443,12 @@ export default function ZhaomuPage() {
           </div>
 
           {/* 今日概览：笔记 */}
-          <div className="card p-4 space-y-3">
+          <div className="card card-interactive space-y-4 p-4 md:p-5">
             <div className="flex items-center gap-2">
               <span className="text-xl">📝</span>
-              <h2 className="text-base md:text-lg font-medium">今日笔记</h2>
+              <h2 className="text-base font-semibold tracking-tight md:text-lg">
+                今日笔记
+              </h2>
             </div>
             {loading.notes ? (
               <div className="card px-3 py-2 text-sm opacity-70">加载中...</div>
@@ -472,10 +471,7 @@ export default function ZhaomuPage() {
                 ) : (
                   <div className="text-sm opacity-60">今天还没有笔记</div>
                 )}
-                <Link
-                  href="/notes"
-                  className="text-sm text-primary underline underline-offset-4"
-                >
+                <Link href="/notes" className="link-inline text-sm">
                   去记录今日笔记
                 </Link>
               </div>
@@ -485,19 +481,21 @@ export default function ZhaomuPage() {
       )}
 
       {/* 分享区块：生成图片用于社交平台分享 */}
-      <section className="card p-4 space-y-3">
-        <div className="flex items-center justify-between">
+      <section className="card card-interactive space-y-4 p-4 md:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xl">📣</span>
-            <h2 className="text-base md:text-lg font-medium">分享今日进度</h2>
+            <h2 className="text-base font-semibold tracking-tight md:text-lg">
+              分享今日进度
+            </h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={generateShareImage}
               disabled={shareGenerating}
               className="btn btn-primary"
             >
-              {shareGenerating ? "生成中..." : "生成分享图片"}
+              {shareGenerating ? "生成中…" : "生成分享图片"}
             </button>
             <button
               onClick={downloadShareImage}
@@ -521,7 +519,9 @@ export default function ZhaomuPage() {
               />
               {shareUrl && (
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm text-gray-600">分享链接：{shareUrl}</p>
+                  <p className="break-all text-sm text-muted-foreground">
+                    分享链接：{shareUrl}
+                  </p>
                   <button
                     onClick={copyShareUrlToClipboard}
                     className="btn btn-sm btn-outline w-fit"

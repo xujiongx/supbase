@@ -105,10 +105,12 @@ export default function WeatherCard({ onWeatherChange }: WeatherCardProps) {
   }, []);
 
   return (
-    <div className="card p-4 space-y-3">
+    <div className="card card-interactive space-y-4 p-4 md:p-5">
       <div className="flex items-center gap-2">
         <span className="text-xl">☀️</span>
-        <h2 className="text-base md:text-lg font-medium">今日天气</h2>
+        <h2 className="text-base font-semibold tracking-tight md:text-lg">
+          今日天气
+        </h2>
       </div>
       {loading ? (
         <div className="card px-3 py-2 text-sm opacity-70">加载中...</div>
@@ -144,7 +146,7 @@ export default function WeatherCard({ onWeatherChange }: WeatherCardProps) {
                 href={weather.fxLink}
                 target="_blank"
                 rel="noreferrer"
-                className="text-primary underline underline-offset-4"
+                className="link-inline text-sm"
                 aria-label="在和风天气查看详情"
               >
                 在和风天气查看详情

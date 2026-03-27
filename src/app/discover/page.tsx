@@ -1,6 +1,7 @@
 "use client";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useEffect, useState } from "react";
+import { Sparkles, ImageIcon, Music2, Clapperboard } from "lucide-react";
 
 export default function DiscoverPage() {
   // 数据状态
@@ -102,53 +103,62 @@ export default function DiscoverPage() {
   }, []);
 
   return (
-    <div className="font-sans">
+    <div className="page-shell font-sans">
       <Tooltip.Provider delayDuration={200}>
-        <main className="space-y-8">
-          {/* 顶部标题与说明 */}
-          <section className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-              每日发现
-            </h1>
-          </section>
+        <main className="space-y-8 md:space-y-10">
+          <header className="space-y-2">
+            <h1 className="page-title">每日发现</h1>
+            <p className="page-lede max-w-none">
+              一言、一图、一曲、一影，用轻量内容打开今天。
+            </p>
+          </header>
 
-          {/* 分类模块 */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {/* 每日一言 */}
-            <div className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">✨</span>
-                  <h2 className="text-base md:text-lg font-medium">每日一言</h2>
-                </div>
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+            <div className="card card-interactive space-y-4 p-4 md:p-5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]">
+                  <Sparkles
+                    className="h-4 w-4"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                </span>
+                <h2 className="text-base font-semibold tracking-tight md:text-lg">
+                  每日一言
+                </h2>
               </div>
-              {/* 样式优化：更突出引文与出处 */}
               {loading.quote ? (
-                <div className="card px-3 py-2 text-sm opacity-70">
-                  加载中...
+                <div className="rounded-md border border-dashed border-subtle px-3 py-6 text-center text-sm text-muted-foreground">
+                  加载中…
                 </div>
               ) : quote ? (
-                <div className="space-y-3">
-                  <div className="card relative p-4 rounded-md">
-                    <span className="absolute left-3 top-2 text-2xl opacity-40">
+                <div className="space-y-4">
+                  <div className="relative rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_40%,transparent)] p-5">
+                    <span
+                      className="absolute left-3 top-2 font-serif text-3xl leading-none text-muted-foreground"
+                      aria-hidden
+                    >
                       “
                     </span>
-                    <p className="text-sm leading-relaxed pl-5 pr-2">
+                    <p className="text-sm leading-relaxed pl-6 pr-2">
                       {quote.text}
                     </p>
-                    <span className="absolute right-3 bottom-2 text-2xl opacity-40">
+                    <span
+                      className="absolute bottom-2 right-3 font-serif text-3xl leading-none text-muted-foreground"
+                      aria-hidden
+                    >
                       ”
                     </span>
                   </div>
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="inline-flex items-center rounded-full border  px-2 py-0.5 text-[0.75rem] md:text-xs leading-none ">
-                      <span className="mr-1 opacity-60">作者</span>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    <span className="inline-flex max-w-full items-center rounded-full border border-subtle px-2.5 py-1 text-[0.75rem] leading-none md:text-xs">
+                      <span className="mr-1 text-muted-foreground">作者</span>
                       <span className="truncate max-w-[10rem]">
                         {quote.fromWho || "佚名"}
                       </span>
                     </span>
-                    <span className="inline-flex items-center rounded-full border  px-2 py-0.5 text-[0.75rem] md:text-xs leading-none ">
-                      <span className="mr-1 opacity-60">来源</span>
+                    <span className="inline-flex max-w-full items-center rounded-full border border-subtle px-2.5 py-1 text-[0.75rem] leading-none md:text-xs">
+                      <span className="mr-1 text-muted-foreground">来源</span>
                       <span className="truncate max-w-[12rem]">
                         {quote.from || "未知来源"}
                       </span>
@@ -156,31 +166,36 @@ export default function DiscoverPage() {
                   </div>
                 </div>
               ) : (
-                <div className="card px-3 py-2 text-sm">
+                <div className="text-sm text-muted-foreground">
                   加载失败，请稍后再试。
                 </div>
               )}
             </div>
 
-            {/* 每日一图 */}
-            <div className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🖼️</span>
-                  <h2 className="text-base md:text-lg font-medium">每日一图</h2>
-                </div>
+            <div className="card card-interactive space-y-4 p-4 md:p-5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]">
+                  <ImageIcon
+                    className="h-4 w-4"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                </span>
+                <h2 className="text-base font-semibold tracking-tight md:text-lg">
+                  每日一图
+                </h2>
               </div>
               {/* 动态内容：图片加载完成后再显示 */}
               {error.image ? (
-                <div className="card px-3 py-2 text-sm">
+                <div className="text-sm text-muted-foreground">
                   加载失败，请稍后再试。
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-md relative">
+                <div className="relative overflow-hidden rounded-md border border-subtle">
                   {!imageReady ? (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5">
-                      <div className="card px-3 py-2 text-sm opacity-70">
-                        加载中...
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-[color-mix(in_srgb,var(--background)_75%,transparent)] backdrop-blur-[2px]">
+                      <div className="text-sm text-muted-foreground">
+                        加载中…
                       </div>
                     </div>
                   ) : null}
@@ -188,7 +203,8 @@ export default function DiscoverPage() {
                     key={imageUrl}
                     src={imageUrl}
                     alt="每日一图"
-                    className="w-full h-auto object-cover aspect-[4/3]"
+                    className="aspect-[4/3] h-auto w-full object-cover transition-opacity duration-300"
+                    style={{ opacity: imageReady ? 1 : 0.85 }}
                     onLoad={() => setImageReady(true)}
                     onError={() =>
                       setError((e) => ({ ...e, image: "加载失败" }))
@@ -198,39 +214,40 @@ export default function DiscoverPage() {
               )}
             </div>
 
-            {/* 每日一音乐 */}
-            <div className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🎵</span>
-                  <h2 className="text-base md:text-lg font-medium">
-                    每日一音乐
-                  </h2>
-                </div>
+            <div className="card card-interactive space-y-4 p-4 md:p-5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]">
+                  <Music2 className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+                </span>
+                <h2 className="text-base font-semibold tracking-tight md:text-lg">
+                  每日一音乐
+                </h2>
               </div>
               {/* 动态内容 */}
               {loading.music ? (
-                <div className="card px-3 py-2 text-sm opacity-70">
-                  加载中...
+                <div className="rounded-md border border-dashed border-subtle px-3 py-6 text-center text-sm text-muted-foreground">
+                  加载中…
                 </div>
               ) : music ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   {music.artwork ? (
                     <img
                       src={music.artwork}
-                      alt={music.name}
-                      className="w-14 h-14 rounded-md object-cover"
+                      alt=""
+                      className="h-14 w-14 shrink-0 rounded-md border border-subtle object-cover"
                     />
                   ) : null}
-                  <div className="space-y-1">
+                  <div className="min-w-0 space-y-1">
                     <div className="text-sm font-medium">{music.name}</div>
-                    <div className="text-xs opacity-60">{music.artist}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {music.artist}
+                    </div>
                     {music.url ? (
                       <a
                         href={music.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-primary"
+                        className="link-inline text-xs"
                       >
                         在 Apple Music 打开
                       </a>
@@ -238,39 +255,42 @@ export default function DiscoverPage() {
                   </div>
                 </div>
               ) : (
-                <div className="card px-3 py-2 text-sm">
+                <div className="text-sm text-muted-foreground">
                   {error.music || "加载失败，请稍后再试。"}
                 </div>
               )}
             </div>
 
-            {/* 每日一电影 */}
-            <div className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🎬</span>
-                  <h2 className="text-base md:text-lg font-medium">
-                    每日一电影
-                  </h2>
-                </div>
+            <div className="card card-interactive space-y-4 p-4 md:p-5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-md border border-subtle bg-[color-mix(in_srgb,var(--muted)_70%,transparent)]">
+                  <Clapperboard
+                    className="h-4 w-4"
+                    strokeWidth={1.75}
+                    aria-hidden
+                  />
+                </span>
+                <h2 className="text-base font-semibold tracking-tight md:text-lg">
+                  每日一电影
+                </h2>
               </div>
               {/* 动态内容 */}
               {loading.movie ? (
-                <div className="card px-3 py-2 text-sm opacity-70">
-                  加载中...
+                <div className="rounded-md border border-dashed border-subtle px-3 py-6 text-center text-sm text-muted-foreground">
+                  加载中…
                 </div>
               ) : movie ? (
-                <div className="grid grid-cols-[96px_1fr] gap-3 items-start">
+                <div className="grid grid-cols-[96px_1fr] items-start gap-4">
                   {movie.poster ? (
                     <img
                       src={movie.poster}
-                      alt={movie.title}
-                      className="w-24 h-36 rounded-md object-cover"
+                      alt=""
+                      className="h-36 w-24 rounded-md border border-subtle object-cover"
                     />
                   ) : null}
-                  <div className="space-y-1">
+                  <div className="min-w-0 space-y-2">
                     <div className="text-sm font-medium">{movie.title}</div>
-                    <div className="text-xs opacity-60 line-clamp-3">
+                    <div className="line-clamp-3 text-xs text-muted-foreground">
                       {movie.overview}
                     </div>
                     {movie.url ? (
@@ -278,7 +298,7 @@ export default function DiscoverPage() {
                         href={movie.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-primary"
+                        className="link-inline text-xs"
                       >
                         查看详情
                       </a>
@@ -286,13 +306,12 @@ export default function DiscoverPage() {
                   </div>
                 </div>
               ) : (
-                <div className="card px-3 py-2 text-sm">
+                <div className="text-sm text-muted-foreground">
                   {error.movie || "加载失败，请稍后再试。"}
                 </div>
               )}
             </div>
           </section>
-
         </main>
       </Tooltip.Provider>
     </div>

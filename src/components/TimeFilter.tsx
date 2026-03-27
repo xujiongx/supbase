@@ -14,7 +14,9 @@ interface Props {
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm font-medium opacity-80">{children}</div>;
+  return (
+    <div className="text-sm font-medium text-muted-foreground">{children}</div>
+  );
 }
 
 function formatDateLocal(d: Date): string {
@@ -85,21 +87,64 @@ export default function TimeFilter({ value, onChange }: Props) {
     onChange({ ...value, [key]: v });
   };
 
-  const btnClass = (active: boolean) => (active ? "btn btn-primary btn-sm" : "btn btn-outline btn-sm");
+  const btnClass = (active: boolean) =>
+    active
+      ? "btn btn-primary btn-sm border-transparent"
+      : "btn btn-ghost btn-sm border-transparent shadow-none";
 
   return (
-    <div className="card p-3 space-y-3">
+    <div className="card space-y-3 p-4">
       <SectionLabel>时间筛选</SectionLabel>
-      <div className="flex flex-wrap items-center gap-2" role="group" aria-label="选择时间范围">
-        <button type="button" className={btnClass(value.type === "all")} onClick={() => setPreset("all")}>全部</button>
-        <button type="button" className={btnClass(value.type === "today")} onClick={() => setPreset("today")}>今天</button>
-        <button type="button" className={btnClass(value.type === "last7")} onClick={() => setPreset("last7")}>最近7天</button>
-        <button type="button" className={btnClass(value.type === "last30")} onClick={() => setPreset("last30")}>最近30天</button>
+      <div
+        className="time-filter-bar"
+        role="group"
+        aria-label="选择时间范围"
+      >
+        <button
+          type="button"
+          className={btnClass(value.type === "all")}
+          onClick={() => setPreset("all")}
+        >
+          全部
+        </button>
+        <button
+          type="button"
+          className={btnClass(value.type === "today")}
+          onClick={() => setPreset("today")}
+        >
+          今天
+        </button>
+        <button
+          type="button"
+          className={btnClass(value.type === "last7")}
+          onClick={() => setPreset("last7")}
+        >
+          最近7天
+        </button>
+        <button
+          type="button"
+          className={btnClass(value.type === "last30")}
+          onClick={() => setPreset("last30")}
+        >
+          最近30天
+        </button>
         <Tooltip.Root>
           <Tooltip.Trigger asChild>
-            <button type="button" className={btnClass(value.type === "custom")} onClick={() => setPreset("custom")}>自定义</button>
+            <button
+              type="button"
+              className={btnClass(value.type === "custom")}
+              onClick={() => setPreset("custom")}
+            >
+              自定义
+            </button>
           </Tooltip.Trigger>
-          <Tooltip.Content className="card px-2 py-1 text-xs" sideOffset={6}>选择开始与结束日期<Tooltip.Arrow className="opacity-40" /></Tooltip.Content>
+          <Tooltip.Content
+            className="tooltip-content z-50"
+            sideOffset={6}
+          >
+            选择开始与结束日期
+            <Tooltip.Arrow className="fill-[var(--color-border)]" />
+          </Tooltip.Content>
         </Tooltip.Root>
       </div>
 

@@ -116,39 +116,47 @@ export default function NotesPage() {
   };
 
   return (
-    <div className="font-sans">
+    <div className="page-shell font-sans">
       <Tooltip.Provider delayDuration={200}>
-        <main className="space-y-8">
-          {/* 顶部标题与快捷入口 */}
-          <section className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-              每日笔记
-            </h1>
-          </section>
+        <main className="space-y-8 md:space-y-10">
+          <header className="space-y-2">
+            <h1 className="page-title">每日笔记</h1>
+            <p className="page-lede">
+              Markdown（GFM）书写，所见即预览，按时间回顾记录。
+            </p>
+          </header>
 
           {!session ? (
-            <div className="card p-4">
-              <div className="text-sm opacity-70">
-                请先登录以查看或添加你的每日笔记。
+            <div className="card card-interactive p-5">
+              <p className="text-sm text-muted-foreground">
+                请先登录以查看或添加笔记。
                 <button
+                  type="button"
                   onClick={() => router.push("/login")}
-                  className="ml-1 underline underline-offset-4"
+                  className="link-inline ml-1"
                 >
-                  立即去登录
+                  去登录
                 </button>
-              </div>
+              </p>
             </div>
           ) : (
             <>
               {banner && (
-                <div className="card px-3 py-2 text-sm">{banner.text}</div>
+                <div
+                  role="status"
+                  className={`banner ${
+                    banner.type === "success"
+                      ? "banner-success"
+                      : "banner-error"
+                  }`}
+                >
+                  {banner.text}
+                </div>
               )}
 
-              {/* 时间筛选组件 */}
               <TimeFilter value={timeFilter} onChange={setTimeFilter} />
 
-              {/* 编辑与预览 */}
-              <div className="card p-3 space-y-3">
+              <div className="card space-y-4 p-4 md:p-5">
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
@@ -159,7 +167,7 @@ export default function NotesPage() {
                     }
                   }}
                   placeholder="支持 Markdown（GFM），按 Ctrl/⌘+Enter 快速添加"
-                  className="input h-40"
+                  className="input min-h-[10rem]"
                   aria-label="输入笔记内容"
                 />
                 <div className="flex items-center gap-2">
@@ -174,21 +182,28 @@ export default function NotesPage() {
                       </button>
                     </Tooltip.Trigger>
                     <Tooltip.Content
-                      className="card px-2 py-1 text-xs"
+                      className="tooltip-content z-50"
                       sideOffset={6}
                     >
                       支持 Markdown（GFM），按 Ctrl/⌘+Enter 快速添加
-                      <Tooltip.Arrow className="opacity-40" />
+                      <Tooltip.Arrow className="fill-[var(--color-border)]" />
                     </Tooltip.Content>
                   </Tooltip.Root>
-                  <span className="text-xs opacity-60">
-                    {content.trim() ? "Ctrl/⌘+Enter 快速添加" : "请输入内容"}
+                  <span className="text-xs text-muted-foreground">
+                    {content.trim()
+                      ? "Ctrl/⌘+Enter 快速添加"
+                      : "请输入内容"}
                   </span>
                 </div>
-                <div className="prose prose-zinc dark:prose-invert max-w-none">
+                <div className="rounded-md border border-dashed border-subtle bg-[color-mix(in_srgb,var(--muted)_35%,transparent)] p-4">
+                  <p className="mb-2 text-xs font-medium text-muted-foreground">
+                    预览
+                  </p>
+                  <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {content}
                   </ReactMarkdown>
+                </div>
                 </div>
               </div>
 
@@ -198,37 +213,37 @@ export default function NotesPage() {
                   <div className="h-10 w-full animate-pulse skeleton" />
                 </div>
               ) : notes.length === 0 ? (
-                <div className="card p-4 text-sm opacity-70">
-                  暂无笔记，输入上方内容并点击“添加”来记录第一条。
+                <div className="card card-interactive p-5 text-sm text-muted-foreground">
+                  暂无笔记，输入上方内容并点击「添加」记录第一条。
                 </div>
               ) : (
-                <ul className="w-full space-y-2">
+                <ul className="w-full space-y-3">
                   {notes.map((n) => (
                     <li
                       key={n.id}
-                      className="card flex items-center justify-between px-3 py-2"
+                      className="card card-interactive flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between"
                     >
-                      <div className="prose prose-zinc dark:prose-invert max-w-none">
+                      <div className="prose prose-sm prose-zinc dark:prose-invert min-w-0 max-w-none flex-1">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {n.content}
                         </ReactMarkdown>
                       </div>
                       <Dialog.Root>
                         <Dialog.Trigger asChild>
-                          <button className="btn btn-outline text-sm">
+                          <button className="btn btn-outline btn-sm shrink-0 self-start sm:self-center">
                             删除
                           </button>
                         </Dialog.Trigger>
                         <Dialog.Portal>
-                          <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
-                          <Dialog.Content className="card fixed left-1/2 top-1/2 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 p-4">
-                            <Dialog.Title className="text-base font-medium">
+                          <Dialog.Overlay className="dialog-overlay-animate fixed inset-0 bg-black/50 backdrop-blur-sm" />
+                          <Dialog.Content className="card dialog-content-animate fixed left-1/2 top-1/2 w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 p-5 shadow-none">
+                            <Dialog.Title className="text-base font-semibold tracking-tight">
                               确认删除
                             </Dialog.Title>
-                            <Dialog.Description className="mt-2 text-sm opacity-70">
+                            <Dialog.Description className="mt-2 text-sm text-muted-foreground">
                               此操作不可恢复，确定要删除这条笔记吗？
                             </Dialog.Description>
-                            <div className="mt-4 flex justify-end gap-2">
+                            <div className="mt-6 flex flex-wrap justify-end gap-2">
                               <Dialog.Close asChild>
                                 <button className="btn btn-outline text-sm">
                                   取消
