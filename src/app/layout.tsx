@@ -31,11 +31,11 @@ export default function RootLayout({
         <Tooltip.Provider delayDuration={200}>
           {/* 全局顶部导航（右上角登录/退出），页面主体使用 children */}
           <header className="sticky top-0 z-50 w-full border-b border-subtle bg-background/85 backdrop-blur-md backdrop-saturate-150 transition-[background] duration-200">
-            <div className="mx-auto max-w-7xl px-3 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:py-3 sm:pt-3">
+            <div className="mx-auto max-w-screen-2xl px-3 pb-2.5 pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:py-3 sm:pt-3">
               <TopNav />
             </div>
           </header>
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 md:py-10">
+          <main className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-8 sm:px-6 md:py-10">
             {children}
           </main>
           <Toaster richColors={false} position="top-right" closeButton offset={16} />

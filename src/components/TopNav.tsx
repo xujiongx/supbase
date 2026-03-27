@@ -11,6 +11,7 @@ import { ChevronRight, Menu, Moon, Sun, X } from "lucide-react";
 const MOBILE_LINKS: { href: string; label: string }[] = [
   { href: "/", label: "首页" },
   { href: "/zhaomu", label: "今朝" },
+  { href: "/kanban", label: "看板" },
   { href: "/todos", label: "每日待办" },
   { href: "/notes", label: "每日笔记" },
   { href: "/discover", label: "每日发现" },
@@ -173,6 +174,17 @@ export default function TopNav() {
             }`}
           >
             今朝
+          </Link>
+          <Link
+            href="/kanban"
+            aria-current={
+              pathname?.startsWith("/kanban") ? "page" : undefined
+            }
+            className={`nav-link rounded-sm px-2 py-1 ${
+              pathname?.startsWith("/kanban") ? "nav-link-active" : ""
+            }`}
+          >
+            看板
           </Link>
           <Link
             href="/todos"
