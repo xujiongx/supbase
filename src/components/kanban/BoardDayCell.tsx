@@ -63,6 +63,11 @@ export default function BoardDayCell({
   const canEdit = !!session && isSupabaseConfigured && inMonth;
   const mutedCell = !inMonth;
 
+  const isNarrowViewport = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 639px)").matches;
+  }, []);
+
   const scrollCellIntoView = useCallback(() => {
     const el = rootRef.current;
     if (!el) return;
@@ -78,12 +83,18 @@ export default function BoardDayCell({
   useEffect(() => {
     if (!noteOpen) return;
     const id = window.requestAnimationFrame(() => {
-      noteAreaRef.current?.focus();
+      const ta = noteAreaRef.current;
+      if (!ta) return;
       try {
-        const len = noteAreaRef.current?.value.length ?? 0;
-        noteAreaRef.current?.setSelectionRange(len, len);
+        ta.focus({ preventScroll: true });
+        const len = ta.value.length ?? 0;
+        ta.setSelectionRange(len, len);
       } catch {
-        /* ignore */
+        try {
+          ta.focus();
+        } catch {
+          /* ignore */
+        }
       }
     });
     return () => cancelAnimationFrame(id);
@@ -91,17 +102,34 @@ export default function BoardDayCell({
 
   useEffect(() => {
     if (!todoQuickOpen) return;
-    const id = window.requestAnimationFrame(() => todoQuickInputRef.current?.focus());
+    const id = window.requestAnimationFrame(() => {
+      const input = todoQuickInputRef.current;
+      if (!input) return;
+      try {
+        input.focus({ preventScroll: true });
+      } catch {
+        try {
+          input.focus();
+        } catch {
+          /* ignore */
+        }
+      }
+    });
     return () => cancelAnimationFrame(id);
   }, [todoQuickOpen]);
 
+  /** 小屏打开带键盘的弹层时不要滚背景格，避免与输入法顶视口叠加后错位 */
   useEffect(() => {
-    if (noteOpen) scrollCellIntoView();
-  }, [noteOpen, scrollCellIntoView]);
+    if (!noteOpen) return;
+    if (isNarrowViewport()) return;
+    scrollCellIntoView();
+  }, [noteOpen, scrollCellIntoView, isNarrowViewport]);
 
   useEffect(() => {
-    if (todoQuickOpen) scrollCellIntoView();
-  }, [todoQuickOpen, scrollCellIntoView]);
+    if (!todoQuickOpen) return;
+    if (isNarrowViewport()) return;
+    scrollCellIntoView();
+  }, [todoQuickOpen, scrollCellIntoView, isNarrowViewport]);
 
   useEffect(() => {
     if (previewNote) scrollCellIntoView();

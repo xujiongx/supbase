@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TopNav from "../components/TopNav";
@@ -19,6 +19,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "朝暮记",
   description: "朝暮记，记录美好生活",
+};
+
+/** 输入法弹出时让布局随可视区域收缩，减轻 iOS/Android 上与 fixed 底栏叠加导致的滚动错位 */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({
