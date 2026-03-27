@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import { boardDayNoonISO, formatDateKey } from "@/lib/boardCalendar";
+import { useBoardSheetViewportStyle } from "@/hooks/useBoardSheetViewportStyle";
 
 export type BoardTodo = {
   id: number;
@@ -39,6 +40,20 @@ function firstLine(text: string, max = 48) {
   return line.length > max ? line.slice(0, max) + "…" : line;
 }
 
+/** 在可滚动底栏内把输入框滚进可视区域，避免被键盘挡住 */
+function revealFieldInSheet(el: HTMLElement | null) {
+  if (!el) return;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      el.scrollIntoView({
+        block: "center",
+        behavior: "smooth",
+        inline: "nearest",
+      });
+    });
+  });
+}
+
 export default function BoardDayCell({
   date,
   inMonth,
@@ -59,6 +74,11 @@ export default function BoardDayCell({
   const [todoQuickOpen, setTodoQuickOpen] = useState(false);
   const noteAreaRef = useRef<HTMLTextAreaElement>(null);
   const todoQuickInputRef = useRef<HTMLInputElement>(null);
+
+  const deleteSheetStyle = useBoardSheetViewportStyle(!!deletingTodo);
+  const todoSheetStyle = useBoardSheetViewportStyle(todoQuickOpen);
+  const previewSheetStyle = useBoardSheetViewportStyle(!!previewNote);
+  const noteSheetStyle = useBoardSheetViewportStyle(noteOpen);
 
   const canEdit = !!session && isSupabaseConfigured && inMonth;
   const mutedCell = !inMonth;
@@ -82,7 +102,8 @@ export default function BoardDayCell({
 
   useEffect(() => {
     if (!noteOpen) return;
-    const id = window.requestAnimationFrame(() => {
+    const delay = isNarrowViewport() ? 220 : 0;
+    const id = window.setTimeout(() => {
       const ta = noteAreaRef.current;
       if (!ta) return;
       try {
@@ -96,13 +117,15 @@ export default function BoardDayCell({
           /* ignore */
         }
       }
-    });
-    return () => cancelAnimationFrame(id);
-  }, [noteOpen]);
+      revealFieldInSheet(ta);
+    }, delay);
+    return () => clearTimeout(id);
+  }, [noteOpen, isNarrowViewport]);
 
   useEffect(() => {
     if (!todoQuickOpen) return;
-    const id = window.requestAnimationFrame(() => {
+    const delay = isNarrowViewport() ? 220 : 0;
+    const id = window.setTimeout(() => {
       const input = todoQuickInputRef.current;
       if (!input) return;
       try {
@@ -114,9 +137,10 @@ export default function BoardDayCell({
           /* ignore */
         }
       }
-    });
-    return () => cancelAnimationFrame(id);
-  }, [todoQuickOpen]);
+      revealFieldInSheet(input);
+    }, delay);
+    return () => clearTimeout(id);
+  }, [todoQuickOpen, isNarrowViewport]);
 
   /** 小屏打开带键盘的弹层时不要滚背景格，避免与输入法顶视口叠加后错位 */
   useEffect(() => {
@@ -395,6 +419,7 @@ export default function BoardDayCell({
           <Dialog.Overlay className="dialog-overlay-animate fixed inset-0 z-100 bg-black/50" />
           <Dialog.Content
             className="card board-dialog-panel board-dialog-panel--sm border-subtle shadow-none"
+            style={deleteSheetStyle}
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <div className="flex items-start justify-between gap-3">
@@ -443,6 +468,7 @@ export default function BoardDayCell({
           <Dialog.Overlay className="dialog-overlay-animate fixed inset-0 z-100 bg-black/50" />
           <Dialog.Content
             className="card board-dialog-panel board-dialog-panel--sm border-subtle shadow-none"
+            style={todoSheetStyle}
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <div className="flex items-start justify-between gap-3">
@@ -464,8 +490,11 @@ export default function BoardDayCell({
               onKeyDown={(e) => {
                 if (e.key === "Enter") addTodo();
               }}
+              onFocus={(e) => {
+                if (isNarrowViewport()) revealFieldInSheet(e.currentTarget);
+              }}
               placeholder="待办标题…"
-              className="input mt-4 min-h-11 w-full text-base sm:text-sm"
+              className="input mt-4 min-h-11 w-full scroll-mt-3 text-base sm:text-sm"
               aria-label="待办标题"
               enterKeyHint="done"
             />
@@ -493,6 +522,7 @@ export default function BoardDayCell({
           <Dialog.Overlay className="dialog-overlay-animate fixed inset-0 z-100 bg-black/50" />
           <Dialog.Content
             className="card board-dialog-panel border-subtle shadow-none"
+            style={previewSheetStyle}
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <div className="flex items-start justify-between gap-3">
@@ -552,6 +582,7 @@ export default function BoardDayCell({
           <Dialog.Overlay className="dialog-overlay-animate fixed inset-0 z-100 bg-black/50" />
           <Dialog.Content
             className="card board-dialog-panel border-subtle shadow-none"
+            style={noteSheetStyle}
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <div className="flex items-start justify-between gap-3">
@@ -575,7 +606,10 @@ export default function BoardDayCell({
                   ref={noteAreaRef}
                   value={noteDraft}
                   onChange={(e) => setNoteDraft(e.target.value)}
-                  className="input min-h-40 w-full resize-y text-base sm:min-h-52 sm:text-sm"
+                  onFocus={(e) => {
+                    if (isNarrowViewport()) revealFieldInSheet(e.currentTarget);
+                  }}
+                  className="input min-h-40 w-full resize-y scroll-mb-8 scroll-mt-2 text-base sm:min-h-52 sm:text-sm"
                   placeholder="支持 Markdown（GFM）…"
                   aria-label="笔记内容"
                 />

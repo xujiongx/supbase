@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description: "朝暮记，记录美好生活",
 };
 
-/** 输入法弹出时让布局随可视区域收缩，减轻 iOS/Android 上与 fixed 底栏叠加导致的滚动错位 */
+/** 输入法弹出时收缩可视区域，避免键盘盖住底部弹窗里的输入区 */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -32,8 +32,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="zh-CN">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex min-h-dvh flex-col`}>
+    <html lang="zh-CN" className="h-full">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} flex h-dvh max-h-dvh flex-col overflow-hidden antialiased`}
+      >
         <Analytics />
         <Tooltip.Provider delayDuration={200}>
           {/* 全局顶部导航（右上角登录/退出），页面主体使用 children */}
@@ -42,7 +44,7 @@ export default function RootLayout({
               <TopNav />
             </div>
           </header>
-          <main className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-8 sm:px-6 md:py-10">
+          <main className="mx-auto min-h-0 w-full max-w-screen-2xl flex-1 overflow-y-auto overscroll-y-contain px-4 py-8 sm:px-6 md:py-10">
             {children}
           </main>
           <Toaster richColors={false} position="top-right" closeButton offset={16} />
